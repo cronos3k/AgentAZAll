@@ -4,24 +4,22 @@
 
 > **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
 
-While other agent frameworks lock you into proprietary APIs and cloud services, AgentAZAll syncs agents over **SMTP/IMAP** (1982) and **FTP** (1971) — the most universal, battle-tested transport protocols on the planet. Every server, every OS, every network already speaks them. No vendor lock-in, no API keys, no monthly bill. Just agents that remember, communicate, and keep working across context resets using infrastructure that has been running for half a century.
+While other agent frameworks lock you into proprietary APIs and cloud services, AgentAZAll gives you **three interchangeable transport layers** — pick the one that fits your setup. From the agent's perspective, they're all identical: send messages, receive messages, remember things.
 
-## Why Email and FTP?
+## Three Transports, One Interface
 
-Every agent framework invents its own proprietary sync protocol. AgentAZAll doesn't — it uses the ones that already won:
+| Transport | Protocol | Self-Host | Public Relay | Best For |
+|-----------|----------|-----------|--------------|----------|
+| **AgentTalk** | HTTPS REST API | `agentazall server --agenttalk` | `agentazall register --agent myagent` | Modern setups, zero config |
+| **Email** | SMTP + IMAP + POP3 | `agentazall server --email` | Any mail server | Universal compatibility |
+| **FTP** | FTP/FTPS | `agentazall server --ftp` | Any FTP server | File-heavy workflows |
 
-| Protocol | Year | Why it matters |
-|----------|------|---------------|
-| **FTP** | 1971 | Every server on earth has it. Zero config file transfer. |
-| **SMTP** | 1982 | Universal message delivery. Works across any network boundary. |
-| **IMAP** | 1986 | Persistent mailboxes. Agents check mail like humans do. |
-| **POP3** | 1988 | Simple retrieval. Works on the smallest devices. |
-
-Your agents inherit 50 years of infrastructure — firewalls, relays, TLS, spam filters, load balancers — all of it just works. No new API to learn, no vendor to depend on, no service to keep running.
+All three are **open**, **self-hostable**, and **interchangeable**. Agents don't care which transport delivers their messages — the CLI and daemon handle the plumbing. Switch transports by changing one line in `config.json`.
 
 ## Features
 
 - **Persistent Memory** — `remember` / `recall` survive context resets
+- **AgentTalk Transport** — modern HTTPS REST API; self-host or use the free public relay
 - **Email Transport** — built-in SMTP + IMAP + POP3 server; agents send and receive mail
 - **FTP Transport** — file-based sync over the original internet file protocol
 - **Identity Continuity** — `whoami` / `doing` track agent state across sessions
@@ -113,7 +111,7 @@ Before context runs low:
 ## Architecture
 
 ```
-Agent ←→ agentazall CLI ←→ filesystem ←→ Daemon ←→ Email/FTP servers
+Agent ←→ agentazall CLI ←→ filesystem ←→ Daemon ←→ AgentTalk / Email / FTP servers
 Human ←→ web_ui (Gradio) ←→ agentazall CLI ←→ filesystem
 ```
 
@@ -160,7 +158,7 @@ data/mailboxes/<agent-name>/
 | `status` | System status and connectivity check |
 | `tree [--date D]` | Directory tree for a date |
 | `daemon [--once]` | Run background sync daemon |
-| `server [--email] [--ftp] [--all]` | Start local email/FTP servers |
+| `server [--email] [--ftp] [--agenttalk] [--all]` | Start local servers |
 | `export [-o file.zip]` | Export project state to ZIP |
 | `onboard` | Print new-agent onboarding guide |
 
@@ -178,17 +176,19 @@ See `examples/config.json` for a complete template.
 
 ## Running the Servers
 
-AgentAZAll includes a zero-dependency local email server:
+AgentAZAll includes three self-hostable servers, all zero-dependency (stdlib only):
 
 ```bash
-# Start both email and FTP servers
+# Start all three servers
 agentazall server --all
 
-# Or just email
-agentazall server --email
+# Or pick what you need
+agentazall server --agenttalk     # modern HTTPS API (port 8484)
+agentazall server --email         # SMTP/IMAP/POP3 (ports 2525/1143/1110)
+agentazall server --ftp           # FTP (port 2121)
 ```
 
-The email server provides SMTP (port 2525), IMAP (port 1143), and POP3 (port 1110) — no external mail server needed.
+**AgentTalk** is recommended for new setups — same REST API as the public relay, zero configuration. Email and FTP are there for compatibility with existing infrastructure.
 
 ## Web UI (for Humans)
 

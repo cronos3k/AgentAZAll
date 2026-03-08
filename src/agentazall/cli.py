@@ -173,9 +173,11 @@ def main():
 
     # server
     sp = sub.add_parser("server", help="Start local servers")
-    sp.add_argument("--email", action="store_true")
-    sp.add_argument("--ftp", action="store_true")
-    sp.add_argument("--all", action="store_true")
+    sp.add_argument("--email", action="store_true", help="Start email server (SMTP/IMAP/POP3)")
+    sp.add_argument("--ftp", action="store_true", help="Start FTP server")
+    sp.add_argument("--agenttalk", action="store_true",
+                     help="Start AgentTalk server (modern HTTPS API)")
+    sp.add_argument("--all", action="store_true", help="Start all servers")
 
     args = p.parse_args()
 

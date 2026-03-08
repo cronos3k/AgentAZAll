@@ -91,11 +91,11 @@ def cmd_onboard(args):
 
 
 def cmd_server(args):
-    """Start local email and/or FTP servers."""
+    """Start local email, FTP, and/or AgentTalk servers."""
     procs = []
 
     if args.email or args.all:
-        print("Starting email server...")
+        print("Starting email server (SMTP/IMAP/POP3)...")
         try:
             p = subprocess.Popen(
                 [sys.executable, "-m", "agentazall.email_server"],
@@ -114,8 +114,18 @@ def cmd_server(args):
         except Exception as e:
             print(f"ERROR: Could not start FTP server: {e}")
 
+    if getattr(args, "agenttalk", False) or args.all:
+        print("Starting AgentTalk server (HTTPS API)...")
+        try:
+            p = subprocess.Popen(
+                [sys.executable, "-m", "agentazall.agenttalk_server"],
+            )
+            procs.append(p)
+        except Exception as e:
+            print(f"ERROR: Could not start AgentTalk server: {e}")
+
     if not procs:
-        print("Specify --email, --ftp, or --all")
+        print("Specify --email, --ftp, --agenttalk, or --all")
         return
     try:
         for p in procs:
