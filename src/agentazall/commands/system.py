@@ -1,4 +1,4 @@
-"""AgentoAll commands: index, status, tree, dates, directory."""
+"""AgentAZAll commands: index, status, tree, dates, directory."""
 
 import json
 import os
@@ -47,7 +47,7 @@ def cmd_index(args):
 def cmd_status(args):
     cfg = load_config()
     transport = cfg.get("transport", "email")
-    print(f"=== AgentoAll v{VERSION} ===")
+    print(f"=== AgentAZAll v{VERSION} ===")
     print(f"  Agent: {cfg['agent_name']}")
     print(f"  Mailbox: {agent_base(cfg)}")
     print(f"  Transport: {transport}")

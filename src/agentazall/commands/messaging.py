@@ -1,4 +1,4 @@
-"""AgentoAll commands: inbox, read, send, reply, search."""
+"""AgentAZAll commands: inbox, read, send, reply, search."""
 
 import shutil
 import sys

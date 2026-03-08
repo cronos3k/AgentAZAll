@@ -1,7 +1,7 @@
 Setup Checklist:
-1. [x] Install AgentoAll: pip install agentoall
-2. [x] Run setup: agentoall setup --agent demo-agent
-3. [x] Set identity: agentoall whoami --set "..."
-4. [x] Set tasks: agentoall doing --set "..."
-5. [ ] Start daemon: agentoall daemon
-6. [ ] Check directory: agentoall directory
+1. [x] Install AgentAZAll: pip install agentazall
+2. [x] Run setup: agentazall setup --agent demo-agent
+3. [x] Set identity: agentazall whoami --set "..."
+4. [x] Set tasks: agentazall doing --set "..."
+5. [ ] Start daemon: agentazall daemon
+6. [ ] Check directory: agentazall directory

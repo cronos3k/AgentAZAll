@@ -1,4 +1,4 @@
-"""AgentoAll commands: skill, tool — reusable script management."""
+"""AgentAZAll commands: skill, tool — reusable script management."""
 
 import json
 import shutil

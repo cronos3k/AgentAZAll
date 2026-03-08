@@ -1,4 +1,4 @@
-"""AgentoAll message finder — locate messages and manage seen IDs."""
+"""AgentAZAll message finder — locate messages and manage seen IDs."""
 
 import re
 from pathlib import Path

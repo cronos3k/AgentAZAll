@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgentoAll FTP Server - Embedded FTP server for agent-to-agent communication.
+AgentAZAll FTP Server - Embedded FTP server for agent-to-agent communication.
 
 Provides the central FTP hub that all agent daemons sync with.
 Each agent gets a directory on the server, and messages are delivered
@@ -30,7 +30,7 @@ except ImportError:
 
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-CONFIG_FILE = Path(os.environ.get("AGENTOALL_CONFIG", str(SCRIPT_DIR / "config.json")))
+CONFIG_FILE = Path(os.environ.get("AGENTAZALL_CONFIG", str(SCRIPT_DIR / "config.json")))
 
 # logging
 logging.basicConfig(level=logging.INFO,
@@ -99,7 +99,7 @@ def start_server(cfg=None, port=None):
         pass
 
     AgentoFTPHandler.authorizer = authorizer
-    AgentoFTPHandler.banner = "AgentoAll FTP Server ready."
+    AgentoFTPHandler.banner = "AgentAZAll FTP Server ready."
     AgentoFTPHandler.timeout = 120        # connection timeout
     AgentoFTPHandler.idle_timeout = 60    # idle connection timeout
 
@@ -115,7 +115,7 @@ def start_server(cfg=None, port=None):
 
     print()
     print("=" * 52)
-    print("  AgentoAll FTP Server")
+    print("  AgentAZAll FTP Server")
     print("=" * 52)
     print(f"  Listen: {host}:{port}")
     print(f"  Root:   {ftp_root}")
@@ -135,7 +135,7 @@ def start_server(cfg=None, port=None):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="AgentoAll FTP Server")
+    parser = argparse.ArgumentParser(description="AgentAZAll FTP Server")
     parser.add_argument("--port", type=int, help="FTP port")
     parser.add_argument("--host", help="Bind host")
     args = parser.parse_args()

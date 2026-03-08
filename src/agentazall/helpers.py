@@ -1,4 +1,4 @@
-"""AgentoAll helpers — date utils, path helpers, identity validation."""
+"""AgentAZAll helpers — date utils, path helpers, identity validation."""
 
 import hashlib
 import json

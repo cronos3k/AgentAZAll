@@ -1,4 +1,4 @@
-"""AgentoAll commands: whoami, doing — agent identity and task tracking."""
+"""AgentAZAll commands: whoami, doing — agent identity and task tracking."""
 
 from ..config import WHAT_AM_I_DOING, WHO_AM_I, load_config
 from ..finder import find_latest_file
@@ -22,7 +22,7 @@ def cmd_whoami(args):
         if text:
             print(text)
         else:
-            print("No identity set. Use: agentoall whoami --set 'I am...'")
+            print("No identity set. Use: agentazall whoami --set 'I am...'")
 
 
 def cmd_doing(args):
@@ -46,4 +46,4 @@ def cmd_doing(args):
         if text:
             print(text)
         else:
-            print("No tasks set. Use: agentoall doing --set 'Working on...'")
+            print("No tasks set. Use: agentazall doing --set 'Working on...'")

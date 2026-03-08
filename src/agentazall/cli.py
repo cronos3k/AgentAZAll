@@ -1,4 +1,4 @@
-"""AgentoAll CLI — main entry point with argparse subcommands."""
+"""AgentAZAll CLI — main entry point with argparse subcommands."""
 
 import argparse
 import logging
@@ -11,12 +11,12 @@ def main():
     logging.basicConfig(level=logging.INFO, format=LOG_FMT, datefmt="%H:%M:%S")
 
     p = argparse.ArgumentParser(
-        prog="agentoall",
-        description=f"AgentoAll v{VERSION} - Persistent Memory & Communication for LLM Agents",
+        prog="agentazall",
+        description=f"AgentAZAll v{VERSION} - Persistent Memory & Communication for LLM Agents",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=textwrap.dedent("""\
             Transports: email (SMTP/IMAP), ftp, or both.
-            Set AGENTOALL_CONFIG / AGENTOALL_AGENT to override defaults.
+            Set AGENTAZALL_CONFIG / AGENTAZALL_AGENT to override defaults.
 
             Examples:
               %(prog)s setup --agent agent1@localhost
@@ -172,7 +172,7 @@ def main():
     # Override config path if specified
     if args.config:
         import os
-        os.environ["AGENTOALL_CONFIG"] = args.config
+        os.environ["AGENTAZALL_CONFIG"] = args.config
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
@@ -207,7 +207,7 @@ def main():
     if args.command in dispatch:
         module_name, func_name = dispatch[args.command]
         import importlib
-        mod = importlib.import_module(f".{module_name}", package="agentoall")
+        mod = importlib.import_module(f".{module_name}", package="agentazall")
         func = getattr(mod, func_name)
         func(args)
     else:

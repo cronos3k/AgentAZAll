@@ -1,8 +1,8 @@
-"""Tests for agentoall.messages module."""
+"""Tests for agentazall.messages module."""
 
 
 
-from agentoall.messages import format_message, parse_headers_only, parse_message
+from agentazall.messages import format_message, parse_headers_only, parse_message
 
 
 class TestFormatMessage:

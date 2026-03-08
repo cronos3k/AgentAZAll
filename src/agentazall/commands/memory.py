@@ -1,4 +1,4 @@
-"""AgentoAll commands: remember, recall — persistent memory system."""
+"""AgentAZAll commands: remember, recall — persistent memory system."""
 
 from datetime import datetime
 

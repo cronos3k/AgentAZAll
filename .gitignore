@@ -24,7 +24,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# AgentoAll runtime data
+# AgentAZAll runtime data
 data/mailboxes/*/
 !examples/data/
 logs/

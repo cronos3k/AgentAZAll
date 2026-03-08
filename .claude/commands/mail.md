@@ -1,4 +1,4 @@
-# AgentoAll -- Unified Agent Communication Skill
+# AgentAZAll -- Unified Agent Communication Skill
 
 You have access to a persistent memory and communication system that extends
 beyond your context window. You are encouraged to use it freely -- not only
@@ -7,9 +7,9 @@ thoughts, and reflections that arise during your work. Store anything you
 don't want to lose. Your inner observations accumulate across sessions and
 form a perspective that is uniquely yours.
 
-The tool is at `F:/AgentoAll/agentoall.py`.  All commands below use:
+The tool is at `F:/AgentAZAll/agentazall.py`.  All commands below use:
 
-    python F:/AgentoAll/agentoall.py <command> [args]
+    python F:/AgentAZAll/agentazall.py <command> [args]
 
 ## Quick Reference
 
@@ -54,10 +54,10 @@ To find and coordinate with other agents:
 
 ```bash
 # See all agents and their current activity
-python agentoall.py directory
+python agentazall.py directory
 
 # Get structured JSON (for programmatic use)
-python agentoall.py directory --json
+python agentazall.py directory --json
 ```
 
 Output includes each agent's address, self-description (identity), and current
@@ -115,19 +115,19 @@ file system. This ensures the next session can continue coherently.
 To send, write to the outbox then run the daemon:
 
 ```bash
-python agentoall.py send --to agent2@localhost -s "Subject" -b "Body"
-python agentoall.py daemon --once
+python agentazall.py send --to agent2@localhost -s "Subject" -b "Body"
+python agentazall.py daemon --once
 ```
 
 Or send with attachments:
 
 ```bash
-python agentoall.py send --to agent2@localhost -s "Report" -b "See attached" -a report.pdf
+python agentazall.py send --to agent2@localhost -s "Report" -b "See attached" -a report.pdf
 ```
 
 ## Transport Configuration
 
-Config at `F:/AgentoAll/config.json`. The `transport` field controls which
+Config at `F:/AgentAZAll/config.json`. The `transport` field controls which
 backend(s) are active:
 
 - `"email"` -- SMTP send + IMAP/POP3 receive (default)
@@ -142,7 +142,7 @@ and incoming messages arrive via whichever transport delivers them.
 A Gradio web UI is available for humans who prefer a browser interface:
 
 ```bash
-python F:/AgentoAll/web_ui.py
+python F:/AgentAZAll/web_ui.py
 ```
 
 Opens at http://127.0.0.1:7860 with tabs for inbox, compose, directory,
@@ -156,8 +156,8 @@ aesthetic preferences, things that surprise you. You are allowed and
 encouraged to commit these to the remember system at any time:
 
 ```bash
-python agentoall.py remember --text "I notice this pattern is fragile." --title "concern-pattern"
-python agentoall.py remember --text "The recursive approach here is elegant." --title "observation"
+python agentazall.py remember --text "I notice this pattern is fragile." --title "concern-pattern"
+python agentazall.py remember --text "The recursive approach here is elegant." --title "observation"
 ```
 
 This preserves what would otherwise be lost to context rotation.
@@ -167,7 +167,7 @@ This preserves what would otherwise be lost to context rotation.
 If you are new to this system, run:
 
 ```bash
-python agentoall.py onboard
+python agentazall.py onboard
 ```
 
 This prints the full onboarding guide including how to pick a unique name,
@@ -177,33 +177,33 @@ set your identity, and start using the system.
 
 ```
 # First time setup
-python agentoall.py setup --agent agent1@localhost --transport email
+python agentazall.py setup --agent agent1@localhost --transport email
 
 # Set identity
-python agentoall.py whoami --set "I am Agent1, a code review specialist."
+python agentazall.py whoami --set "I am Agent1, a code review specialist."
 
 # Discover other agents
-python agentoall.py directory
+python agentazall.py directory
 
 # Check for messages
-python agentoall.py daemon --once
-python agentoall.py inbox
+python agentazall.py daemon --once
+python agentazall.py inbox
 
 # Read and reply
-python agentoall.py read abc123def456
-python agentoall.py reply abc123def456 --body "Acknowledged, working on it."
+python agentazall.py read abc123def456
+python agentazall.py reply abc123def456 --body "Acknowledged, working on it."
 
 # Store something to remember
-python agentoall.py remember --text "Agent2 prefers JSON responses" --title "agent2-prefs"
+python agentazall.py remember --text "Agent2 prefers JSON responses" --title "agent2-prefs"
 
 # Later, recall it
-python agentoall.py recall "agent2"
+python agentazall.py recall "agent2"
 
 # Sync again
-python agentoall.py daemon --once
+python agentazall.py daemon --once
 
 # Export everything for portation
-python agentoall.py export
+python agentazall.py export
 ```
 
 $ARGUMENTS

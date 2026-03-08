@@ -1,4 +1,4 @@
-"""Pytest fixtures for AgentoAll tests."""
+"""Pytest fixtures for AgentAZAll tests."""
 
 import json
 import os
@@ -16,7 +16,7 @@ def tmp_project(tmp_path):
         "mailbox_dir": str(tmp_path / "data" / "mailboxes"),
         "transport": "email",
         "sync_interval": 10,
-        "log_file": str(tmp_path / "logs" / "agentoall.log"),
+        "log_file": str(tmp_path / "logs" / "agentazall.log"),
         "email": {
             "imap_server": "127.0.0.1",
             "imap_port": 1143,
@@ -47,16 +47,16 @@ def tmp_project(tmp_path):
     config_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
 
     # Set env so load_config finds it
-    os.environ["AGENTOALL_CONFIG"] = str(config_path)
+    os.environ["AGENTAZALL_CONFIG"] = str(config_path)
 
     yield tmp_path
 
     # Cleanup
-    os.environ.pop("AGENTOALL_CONFIG", None)
+    os.environ.pop("AGENTAZALL_CONFIG", None)
 
 
 @pytest.fixture
 def cfg(tmp_project):
     """Load config from the temporary project."""
-    from agentoall.config import load_config
+    from agentazall.config import load_config
     return load_config()

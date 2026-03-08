@@ -1,4 +1,4 @@
-"""AgentoAll email transport — SMTP + IMAP/POP3."""
+"""AgentAZAll email transport — SMTP + IMAP/POP3."""
 
 import email as email_mod
 import email.encoders
@@ -18,7 +18,7 @@ from email.parser import BytesParser
 from pathlib import Path
 from typing import List, Tuple
 
-log = logging.getLogger("agentoall")
+log = logging.getLogger("agentazall")
 
 
 class EmailTransport:

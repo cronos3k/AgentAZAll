@@ -1,4 +1,4 @@
-"""AgentoAll commands: note, notes — named notes management."""
+"""AgentAZAll commands: note, notes — named notes management."""
 
 from ..config import NOTES, load_config
 from ..finder import find_latest_file

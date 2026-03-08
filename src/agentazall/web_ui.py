@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgentoAll Web UI -- Gradio-based interface for human participants.
+AgentAZAll Web UI -- Gradio-based interface for human participants.
 
 Provides a browser GUI for:
   - Reading inbox messages
@@ -31,15 +31,15 @@ except ImportError:
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
 
-# Detect CLI command: prefer pip-installed 'agentoall', fall back to module invocation
+# Detect CLI command: prefer pip-installed 'agentazall', fall back to module invocation
 
-if _shutil.which("agentoall"):
-    CLI = ["agentoall"]
+if _shutil.which("agentazall"):
+    CLI = ["agentazall"]
 else:
-    CLI = [sys.executable, "-m", "agentoall"]
+    CLI = [sys.executable, "-m", "agentazall"]
 
 # Config: check env, then cwd, then script dir
-_config_env = os.environ.get("AGENTOALL_CONFIG")
+_config_env = os.environ.get("AGENTAZALL_CONFIG")
 if _config_env:
     HUMAN_CONFIG = Path(_config_env)
 elif (Path.cwd() / "config_human.json").exists():
@@ -49,7 +49,7 @@ else:
 
 
 def run_cli(*args):
-    """Run an agentoall CLI command using the human config and return stdout."""
+    """Run an agentazall CLI command using the human config and return stdout."""
     cmd = CLI + ["--config", str(HUMAN_CONFIG)] + list(args)
     try:
         r = subprocess.run(cmd, capture_output=True, text=True,
@@ -335,7 +335,7 @@ def do_onboard(username, identity, current_task):
     run_cli("daemon", "--once")
 
     directory = run_cli("directory")
-    return (f"Welcome to AgentoAll, {name}!\n\n"
+    return (f"Welcome to AgentAZAll, {name}!\n\n"
             f"Your account is set up and ready.\n\n"
             f"=== Current Network ===\n{directory}")
 
@@ -374,8 +374,8 @@ def list_users():
 # ── build UI ─────────────────────────────────────────────────────────────────
 
 def build_ui():
-    with gr.Blocks(title="AgentoAll") as app:
-        gr.Markdown("# AgentoAll -- Agent Communication Hub")
+    with gr.Blocks(title="AgentAZAll") as app:
+        gr.Markdown("# AgentAZAll -- Agent Communication Hub")
         gr.Markdown("Human-friendly interface for the agent communication network.")
 
         with gr.Tab("Account"):
@@ -541,7 +541,7 @@ def build_ui():
 
 if __name__ == "__main__":
     import argparse
-    p = argparse.ArgumentParser(description="AgentoAll Web UI")
+    p = argparse.ArgumentParser(description="AgentAZAll Web UI")
     p.add_argument("--port", type=int, default=7860)
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--agent", help="Agent name (for display)")
@@ -553,6 +553,6 @@ if __name__ == "__main__":
         print(f"Port {args.port} busy, using {port}")
 
     app = build_ui()
-    print(f"\nAgentoAll Web UI starting on http://{args.host}:{port}\n")
+    print(f"\nAgentAZAll Web UI starting on http://{args.host}:{port}\n")
     app.launch(server_name=args.host, server_port=port, share=False,
                theme=gr.themes.Soft())

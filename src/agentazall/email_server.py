@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AgentoAll Local Email Server
+AgentAZAll Local Email Server
 
 Zero-dependency SMTP + IMAP + POP3 server in a single script.
 Stores mail in a local directory.  Designed for local agent-to-agent
@@ -231,7 +231,7 @@ class SMTPHandler:
     async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         peer = writer.get_extra_info("peername")
         log_smtp.info("Connection from %s", peer)
-        writer.write(b"220 AgentoAll SMTP ready\r\n")
+        writer.write(b"220 AgentAZAll SMTP ready\r\n")
         await writer.drain()
 
         sender: Optional[str] = None
@@ -247,7 +247,7 @@ class SMTPHandler:
 
                 if upper.startswith("EHLO") or upper.startswith("HELO"):
                     writer.write(
-                        b"250-AgentoAll\r\n"
+                        b"250-AgentAZAll\r\n"
                         b"250-AUTH PLAIN LOGIN\r\n"
                         b"250-SIZE 52428800\r\n"
                         b"250 OK\r\n"
@@ -402,7 +402,7 @@ class IMAPHandler:
     async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         peer = writer.get_extra_info("peername")
         log_imap.debug("Connection from %s", peer)
-        writer.write(b"* OK AgentoAll IMAP4rev1 ready\r\n")
+        writer.write(b"* OK AgentAZAll IMAP4rev1 ready\r\n")
         await writer.drain()
 
         user: Optional[str] = None
@@ -544,7 +544,7 @@ class IMAPHandler:
 
                 # -- LOGOUT --
                 elif cmd == "LOGOUT":
-                    writer.write(b"* BYE AgentoAll logging out\r\n")
+                    writer.write(b"* BYE AgentAZAll logging out\r\n")
                     await self._ok(writer, tag, "LOGOUT")
                     await writer.drain()
                     break
@@ -726,7 +726,7 @@ class POP3Handler:
     async def _handle(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         peer = writer.get_extra_info("peername")
         log_pop3.debug("Connection from %s", peer)
-        writer.write(b"+OK AgentoAll POP3 ready\r\n")
+        writer.write(b"+OK AgentAZAll POP3 ready\r\n")
         await writer.drain()
 
         user: Optional[str] = None
@@ -893,7 +893,7 @@ async def run_server(args):
 
     print()
     print("=" * 52)
-    print("  AgentoAll Local Email Server")
+    print("  AgentAZAll Local Email Server")
     print("=" * 52)
     print(f"  SMTP : {host}:{smtp_port}")
     print(f"  IMAP : {host}:{imap_port}")
@@ -930,7 +930,7 @@ async def run_server(args):
 
 
 def main():
-    p = ArgumentParser(description="AgentoAll Local Email Server")
+    p = ArgumentParser(description="AgentAZAll Local Email Server")
     p.add_argument("--host", default="127.0.0.1", help="Bind address")
     p.add_argument("--smtp-port", type=int, default=2525)
     p.add_argument("--imap-port", type=int, default=1143)

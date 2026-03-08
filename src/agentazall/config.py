@@ -1,4 +1,4 @@
-"""AgentoAll configuration — constants, config resolution, load/save."""
+"""AgentAZAll configuration — constants, config resolution, load/save."""
 
 import json
 import os
@@ -37,7 +37,7 @@ DEFAULT_CONFIG = {
     "mailbox_dir": "./data/mailboxes",
     "transport": "email",
     "sync_interval": 10,
-    "log_file": "./logs/agentoall.log",
+    "log_file": "./logs/agentazall.log",
     "email": {
         "imap_server": "127.0.0.1",
         "imap_port": 1143,
@@ -72,14 +72,14 @@ def resolve_config_path() -> Path:
     """Resolve the config file path.
 
     Priority:
-        1. AGENTOALL_CONFIG env var  → explicit path
-        2. AGENTOALL_ROOT  env var   → $ROOT/config.json
+        1. AGENTAZALL_CONFIG env var  → explicit path
+        2. AGENTAZALL_ROOT  env var   → $ROOT/config.json
         3. ./config.json             → cwd fallback
     """
-    env_config = os.environ.get("AGENTOALL_CONFIG")
+    env_config = os.environ.get("AGENTAZALL_CONFIG")
     if env_config:
         return Path(env_config)
-    env_root = os.environ.get("AGENTOALL_ROOT")
+    env_root = os.environ.get("AGENTAZALL_ROOT")
     if env_root:
         return Path(env_root) / "config.json"
     return Path.cwd() / "config.json"
@@ -115,13 +115,13 @@ def load_config(config_path: Path = None) -> dict:
     config_path = Path(config_path)
     if not config_path.exists():
         print(f"ERROR: No config at {config_path}")
-        print("Run:  agentoall setup --agent <name>")
+        print("Run:  agentazall setup --agent <name>")
         sys.exit(1)
     with open(config_path, encoding="utf-8") as f:
         user = json.load(f)
     cfg = _deep_merge(DEFAULT_CONFIG, user)
     _resolve_relative_paths(cfg, config_path.parent.resolve())
-    env = os.environ.get("AGENTOALL_AGENT")
+    env = os.environ.get("AGENTAZALL_AGENT")
     if env:
         cfg["agent_name"] = env
     # stash config path for save_config

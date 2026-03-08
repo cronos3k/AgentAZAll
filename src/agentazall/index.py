@@ -1,4 +1,4 @@
-"""AgentoAll index builder — daily index and cross-day memory index."""
+"""AgentAZAll index builder — daily index and cross-day memory index."""
 
 import json
 from pathlib import Path
@@ -35,7 +35,7 @@ def build_index(cfg, d=None) -> Optional[Path]:
         return None
 
     lines = [
-        f"# AgentoAll Index: {cfg['agent_name']}",
+        f"# AgentAZAll Index: {cfg['agent_name']}",
         f"# Date: {d}",
         f"# Updated: {now_str()}",
         "",

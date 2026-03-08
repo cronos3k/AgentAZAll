@@ -1,10 +1,10 @@
-"""Tests for agentoall.index module."""
+"""Tests for agentazall.index module."""
 
 
-from agentoall.config import INBOX, REMEMBER
-from agentoall.helpers import agent_day, ensure_dirs
-from agentoall.index import build_index, build_remember_index
-from agentoall.messages import format_message
+from agentazall.config import INBOX, REMEMBER
+from agentazall.helpers import agent_day, ensure_dirs
+from agentazall.index import build_index, build_remember_index
+from agentazall.messages import format_message
 
 
 class TestBuildIndex:
@@ -15,7 +15,7 @@ class TestBuildIndex:
         assert idx is not None
         assert idx.exists()
         content = idx.read_text(encoding="utf-8")
-        assert "AgentoAll Index" in content
+        assert "AgentAZAll Index" in content
         assert "INBOX" in content
 
     def test_index_includes_messages(self, cfg):

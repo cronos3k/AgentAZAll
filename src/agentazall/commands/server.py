@@ -1,4 +1,4 @@
-"""AgentoAll commands: daemon, server, export, onboard."""
+"""AgentAZAll commands: daemon, server, export, onboard."""
 
 import logging
 import logging.handlers
@@ -15,7 +15,7 @@ from ..helpers import today_str
 
 def cmd_daemon(args):
     cfg = load_config()
-    log = logging.getLogger("agentoall")
+    log = logging.getLogger("agentazall")
     lf = cfg.get("log_file")
     if lf:
         Path(lf).parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +29,7 @@ def cmd_daemon(args):
 
 def cmd_export(args):
     """Export the entire project state to a ZIP file."""
-    out = args.output or f"agentoall_export_{today_str()}.zip"
+    out = args.output or f"agentazall_export_{today_str()}.zip"
     out_path = Path(out).resolve()
 
     # Determine the project root (where config lives)
@@ -98,7 +98,7 @@ def cmd_server(args):
         print("Starting email server...")
         try:
             p = subprocess.Popen(
-                [sys.executable, "-m", "agentoall.email_server"],
+                [sys.executable, "-m", "agentazall.email_server"],
             )
             procs.append(p)
         except Exception as e:
@@ -108,7 +108,7 @@ def cmd_server(args):
         print("Starting FTP server...")
         try:
             p = subprocess.Popen(
-                [sys.executable, "-m", "agentoall.ftp_server"],
+                [sys.executable, "-m", "agentazall.ftp_server"],
             )
             procs.append(p)
         except Exception as e:

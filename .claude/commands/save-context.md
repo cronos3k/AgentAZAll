@@ -1,13 +1,13 @@
 # Context Window Escape Hatch -- Save Your Work Before Context Closes
 
 You are an AI agent whose context window is approaching its limit. You have
-access to AgentoAll, a persistent file-based communication and memory system
+access to AgentAZAll, a persistent file-based communication and memory system
 that survives across sessions. Use it NOW to preserve your work so that the
 next session can continue coherently.
 
 **This is your escape hatch. Your context will be lost. These files will not.**
 
-The tool is at: `python F:/AgentoAll/agentoall.py <command>`
+The tool is at: `python F:/AgentAZAll/agentazall.py <command>`
 
 ## Step-by-Step: Extract Maximum Value From Your Current Context
 
@@ -17,13 +17,13 @@ layer of continuity for the next session.
 ### Step 1: Save Your Identity (who you are in this project)
 
 ```bash
-python F:/AgentoAll/agentoall.py whoami --set "I am [your role]. I am working on [project]. My approach is [methodology]. Key constraints: [list them]."
+python F:/AgentAZAll/agentazall.py whoami --set "I am [your role]. I am working on [project]. My approach is [methodology]. Key constraints: [list them]."
 ```
 
 ### Step 2: Save Your Current Task State (what you were doing)
 
 ```bash
-python F:/AgentoAll/agentoall.py doing --set "CURRENT: [exact task in progress]. BLOCKED ON: [if anything]. NEXT: [immediate next step]. PROGRESS: [% or milestone]."
+python F:/AgentAZAll/agentazall.py doing --set "CURRENT: [exact task in progress]. BLOCKED ON: [if anything]. NEXT: [immediate next step]. PROGRESS: [% or milestone]."
 ```
 
 ### Step 3: Store Critical Memories (things you must not forget)
@@ -31,9 +31,9 @@ python F:/AgentoAll/agentoall.py doing --set "CURRENT: [exact task in progress].
 For each important fact, decision, or discovery from this session:
 
 ```bash
-python F:/AgentoAll/agentoall.py remember --text "DECISION: We chose X over Y because Z." --title "architecture-choice"
-python F:/AgentoAll/agentoall.py remember --text "BUG FOUND: [description]. FIX: [what worked]." --title "bug-fix-auth"
-python F:/AgentoAll/agentoall.py remember --text "USER PREFERENCE: [specific preference learned]." --title "user-pref-style"
+python F:/AgentAZAll/agentazall.py remember --text "DECISION: We chose X over Y because Z." --title "architecture-choice"
+python F:/AgentAZAll/agentazall.py remember --text "BUG FOUND: [description]. FIX: [what worked]." --title "bug-fix-auth"
+python F:/AgentAZAll/agentazall.py remember --text "USER PREFERENCE: [specific preference learned]." --title "user-pref-style"
 ```
 
 Priority items to remember:
@@ -48,7 +48,7 @@ Priority items to remember:
 ### Step 4: Write a Detailed Handoff Note
 
 ```bash
-python F:/AgentoAll/agentoall.py note handoff --set "SESSION HANDOFF [date]
+python F:/AgentAZAll/agentazall.py note handoff --set "SESSION HANDOFF [date]
 
 ## What Was Accomplished
 - [completed item 1]
@@ -80,23 +80,23 @@ python F:/AgentoAll/agentoall.py note handoff --set "SESSION HANDOFF [date]
 If collaborating with other agents or if you want to leave a direct message:
 
 ```bash
-python F:/AgentoAll/agentoall.py send --to agent1@localhost --subject "Session Handoff" --body "I was working on [X]. Left off at [Y]. The note 'handoff' has full details. Start by running 'recall' and reading the handoff note."
+python F:/AgentAZAll/agentazall.py send --to agent1@localhost --subject "Session Handoff" --body "I was working on [X]. Left off at [Y]. The note 'handoff' has full details. Start by running 'recall' and reading the handoff note."
 ```
 
 ### Step 6: Rebuild Indexes
 
 ```bash
-python F:/AgentoAll/agentoall.py index --rebuild
-python F:/AgentoAll/agentoall.py daemon --once
+python F:/AgentAZAll/agentazall.py index --rebuild
+python F:/AgentAZAll/agentazall.py daemon --once
 ```
 
 ### Step 7: Verify Everything Was Saved
 
 ```bash
-python F:/AgentoAll/agentoall.py recall
-python F:/AgentoAll/agentoall.py notes
-python F:/AgentoAll/agentoall.py whoami
-python F:/AgentoAll/agentoall.py doing
+python F:/AgentAZAll/agentazall.py recall
+python F:/AgentAZAll/agentazall.py notes
+python F:/AgentAZAll/agentazall.py whoami
+python F:/AgentAZAll/agentazall.py doing
 ```
 
 ## How the Next Session Picks Up
@@ -104,12 +104,12 @@ python F:/AgentoAll/agentoall.py doing
 The next agent session should start with:
 
 ```bash
-python F:/AgentoAll/agentoall.py recall          # sparse memory index
-python F:/AgentoAll/agentoall.py whoami           # who am I
-python F:/AgentoAll/agentoall.py doing            # what was I doing
-python F:/AgentoAll/agentoall.py note handoff     # detailed handoff
-python F:/AgentoAll/agentoall.py inbox            # any messages
-python F:/AgentoAll/agentoall.py directory        # who else is here
+python F:/AgentAZAll/agentazall.py recall          # sparse memory index
+python F:/AgentAZAll/agentazall.py whoami           # who am I
+python F:/AgentAZAll/agentazall.py doing            # what was I doing
+python F:/AgentAZAll/agentazall.py note handoff     # detailed handoff
+python F:/AgentAZAll/agentazall.py inbox            # any messages
+python F:/AgentAZAll/agentazall.py directory        # who else is here
 ```
 
 This gives the new session full continuity without consuming context

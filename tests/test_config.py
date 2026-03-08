@@ -1,10 +1,10 @@
-"""Tests for agentoall.config module."""
+"""Tests for agentazall.config module."""
 
 import json
 import os
 from pathlib import Path
 
-from agentoall.config import (
+from agentazall.config import (
     AGENT_LEVEL_DIRS,
     ALL_SUBDIRS,
     DEFAULT_CONFIG,
@@ -75,18 +75,18 @@ class TestConfigResolution:
     def test_env_config(self, tmp_path, monkeypatch):
         p = tmp_path / "custom.json"
         p.write_text("{}", encoding="utf-8")
-        monkeypatch.setenv("AGENTOALL_CONFIG", str(p))
-        monkeypatch.delenv("AGENTOALL_ROOT", raising=False)
+        monkeypatch.setenv("AGENTAZALL_CONFIG", str(p))
+        monkeypatch.delenv("AGENTAZALL_ROOT", raising=False)
         assert resolve_config_path() == p
 
     def test_env_root(self, tmp_path, monkeypatch):
-        monkeypatch.delenv("AGENTOALL_CONFIG", raising=False)
-        monkeypatch.setenv("AGENTOALL_ROOT", str(tmp_path))
+        monkeypatch.delenv("AGENTAZALL_CONFIG", raising=False)
+        monkeypatch.setenv("AGENTAZALL_ROOT", str(tmp_path))
         assert resolve_config_path() == tmp_path / "config.json"
 
     def test_cwd_fallback(self, monkeypatch):
-        monkeypatch.delenv("AGENTOALL_CONFIG", raising=False)
-        monkeypatch.delenv("AGENTOALL_ROOT", raising=False)
+        monkeypatch.delenv("AGENTAZALL_CONFIG", raising=False)
+        monkeypatch.delenv("AGENTAZALL_ROOT", raising=False)
         result = resolve_config_path()
         assert result.name == "config.json"
 
@@ -107,7 +107,7 @@ class TestLoadSaveConfig:
     def test_internal_keys_not_saved(self, tmp_project):
         cfg = load_config()
         save_config(cfg)
-        config_path = Path(os.environ["AGENTOALL_CONFIG"])
+        config_path = Path(os.environ["AGENTAZALL_CONFIG"])
         raw = json.loads(config_path.read_text(encoding="utf-8"))
         assert "_config_path" not in raw
 

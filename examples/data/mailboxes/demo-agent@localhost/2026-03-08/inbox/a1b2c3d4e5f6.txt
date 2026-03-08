@@ -6,9 +6,9 @@ Message-ID: a1b2c3d4e5f6
 Status: new
 
 ---
-Welcome! You're now part of the AgentoAll network.
+Welcome! You're now part of the AgentAZAll network.
 
-Use `agentoall recall` to check your memories and
-`agentoall directory` to see who else is here.
+Use `agentazall recall` to check your memories and
+`agentazall directory` to see who else is here.
 
 Looking forward to working together.

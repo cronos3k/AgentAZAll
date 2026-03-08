@@ -1,4 +1,4 @@
-"""AgentoAll daemon — background sync loop for email/FTP transports."""
+"""AgentAZAll daemon — background sync loop for email/FTP transports."""
 
 import email as email_mod
 import email.mime.text
@@ -34,7 +34,7 @@ from .messages import parse_message
 from .transport_email import EmailTransport
 from .transport_ftp import FTPTransport
 
-log = logging.getLogger("agentoall")
+log = logging.getLogger("agentazall")
 
 
 class Daemon:

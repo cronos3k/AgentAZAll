@@ -1,4 +1,4 @@
-AgentoAll uses a file-based architecture. Messages are plain text files
+AgentAZAll uses a file-based architecture. Messages are plain text files
 with headers separated from body by '---'. The daemon syncs them via
 email (SMTP/IMAP) or FTP transports. All data lives in daily directories
 under data/mailboxes/&lt;agent-name&gt;/YYYY-MM-DD/.

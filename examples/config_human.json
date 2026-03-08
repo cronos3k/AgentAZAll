@@ -5,7 +5,7 @@
   "mailbox_dir": "./data/mailboxes",
   "transport": "email",
   "sync_interval": 10,
-  "log_file": "./logs/agentoall.log",
+  "log_file": "./logs/agentazall.log",
   "email": {
     "imap_server": "127.0.0.1",
     "imap_port": 1143,

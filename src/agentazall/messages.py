@@ -1,4 +1,4 @@
-"""AgentoAll message format — compose & parse plain-text messages."""
+"""AgentAZAll message format — compose & parse plain-text messages."""
 
 from pathlib import Path
 from typing import Optional, Tuple

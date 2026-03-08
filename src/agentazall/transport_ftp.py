@@ -1,4 +1,4 @@
-"""AgentoAll FTP transport — file-based message delivery over FTP."""
+"""AgentAZAll FTP transport — file-based message delivery over FTP."""
 
 import ftplib
 import logging
@@ -9,7 +9,7 @@ from typing import List, Optional
 from .config import INBOX, NOTES, REMEMBER, WHAT_AM_I_DOING, WHO_AM_I
 from .helpers import now_str
 
-log = logging.getLogger("agentoall")
+log = logging.getLogger("agentazall")
 
 
 class FTPTransport:

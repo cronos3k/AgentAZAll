@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-AgentoAll Portation Script
+AgentAZAll Portation Script
 
-Packages the entire AgentoAll project -- code, agent data, email server data,
+Packages the entire AgentAZAll project -- code, agent data, email server data,
 FTP server data, configs, and logs -- into a single ZIP file that can be
 copied to another system and run immediately.
 
@@ -24,12 +24,12 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 def create_export(output=None, include_data=True):
     if not output:
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-        output = f"agentoall_portable_{ts}.zip"
+        output = f"agentazall_portable_{ts}.zip"
     out_path = Path(output).resolve()
 
     # files to always include
     code_files = [
-        "agentoall.py",
+        "agentazall.py",
         "email_server.py",
         "ftp_server.py",
         "web_ui.py",
@@ -77,7 +77,7 @@ def create_export(output=None, include_data=True):
     ratio = (1 - zip_size / total_bytes) * 100 if total_bytes > 0 else 0
 
     print("=" * 52)
-    print("  AgentoAll Portation Complete")
+    print("  AgentAZAll Portation Complete")
     print("=" * 52)
     print(f"  Output:       {out_path}")
     print(f"  Files:        {count}")
@@ -88,13 +88,13 @@ def create_export(output=None, include_data=True):
     print(f"    1. unzip {out_path.name}")
     print("    2. pip install pyftpdlib gradio  (optional deps)")
     print("    3. python email_server.py        (start mail server)")
-    print("    4. python agentoall.py daemon    (start sync daemon)")
+    print("    4. python agentazall.py daemon    (start sync daemon)")
     print("    5. python web_ui.py              (start web UI)")
     print("=" * 52)
 
 
 if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="AgentoAll Portation Script")
+    p = argparse.ArgumentParser(description="AgentAZAll Portation Script")
     p.add_argument("--output", "-o", help="Output ZIP filename")
     p.add_argument("--no-data", action="store_true",
                    help="Exclude agent data (code only)")

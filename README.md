@@ -1,8 +1,8 @@
-# AgentoAll
+# AgentAZAll
 
 **Persistent memory and communication system for LLM agents.**
 
-AgentoAll gives command-line AI agents the ability to remember across sessions, communicate with each other, and maintain identity continuity through context resets. It is file-based, protocol-agnostic, and requires zero external dependencies for core functionality.
+AgentAZAll gives command-line AI agents the ability to remember across sessions, communicate with each other, and maintain identity continuity through context resets. It is file-based, protocol-agnostic, and requires zero external dependencies for core functionality.
 
 ## Features
 
@@ -21,41 +21,41 @@ AgentoAll gives command-line AI agents the ability to remember across sessions, 
 
 ```bash
 # Core (stdlib only, no external deps)
-pip install agentoall
+pip install agentazall
 
 # With FTP transport
-pip install agentoall[ftp]
+pip install agentazall[ftp]
 
 # With web UI
-pip install agentoall[ui]
+pip install agentazall[ui]
 
 # Everything
-pip install agentoall[all]
+pip install agentazall[all]
 ```
 
 ## Quick Start
 
 ```bash
 # 1. Set up your agent
-agentoall setup --agent myagent@localhost
+agentazall setup --agent myagent@localhost
 
 # 2. Set your identity
-agentoall whoami --set "I am MyAgent, a code review specialist."
-agentoall doing --set "Getting started with AgentoAll."
+agentazall whoami --set "I am MyAgent, a code review specialist."
+agentazall doing --set "Getting started with AgentAZAll."
 
 # 3. Store a memory
-agentoall remember --text "AgentoAll uses file-based message passing." --title "architecture"
+agentazall remember --text "AgentAZAll uses file-based message passing." --title "architecture"
 
 # 4. Recall memories
-agentoall recall                    # show all memories
-agentoall recall "architecture"     # search memories
+agentazall recall                    # show all memories
+agentazall recall "architecture"     # search memories
 
 # 5. Send a message
-agentoall send --to other-agent@localhost --subject "Hello" --body "Hi there!"
+agentazall send --to other-agent@localhost --subject "Hello" --body "Hi there!"
 
 # 6. Check inbox
-agentoall daemon --once    # sync first
-agentoall inbox            # read messages
+agentazall daemon --once    # sync first
+agentazall inbox            # read messages
 ```
 
 ## For LLM Agents (CLAUDE.md Integration)
@@ -63,24 +63,24 @@ agentoall inbox            # read messages
 Add to your agent's system prompt or `CLAUDE.md`:
 
 ```markdown
-# AgentoAll — Persistent Memory
+# AgentAZAll — Persistent Memory
 
 At the START of every session:
-    agentoall recall          # what do I remember?
-    agentoall whoami          # who am I?
-    agentoall doing           # what was I doing?
-    agentoall inbox           # any new messages?
+    agentazall recall          # what do I remember?
+    agentazall whoami          # who am I?
+    agentazall doing           # what was I doing?
+    agentazall inbox           # any new messages?
 
 Before context runs low:
-    agentoall doing --set "CURRENT: X. NEXT: Y."
-    agentoall remember --text "<insight>" --title "<slug>"
+    agentazall doing --set "CURRENT: X. NEXT: Y."
+    agentazall remember --text "<insight>" --title "<slug>"
 ```
 
 ## Architecture
 
 ```
-Agent ←→ agentoall CLI ←→ filesystem ←→ Daemon ←→ Email/FTP servers
-Human ←→ web_ui (Gradio) ←→ agentoall CLI ←→ filesystem
+Agent ←→ agentazall CLI ←→ filesystem ←→ Daemon ←→ Email/FTP servers
+Human ←→ web_ui (Gradio) ←→ agentazall CLI ←→ filesystem
 ```
 
 All data lives in plain text files organized by date:
@@ -131,10 +131,10 @@ data/mailboxes/<agent-name>/
 
 ## Configuration
 
-AgentoAll looks for `config.json` in this order:
+AgentAZAll looks for `config.json` in this order:
 
-1. `AGENTOALL_CONFIG` environment variable (explicit path)
-2. `AGENTOALL_ROOT` environment variable + `/config.json`
+1. `AGENTAZALL_CONFIG` environment variable (explicit path)
+2. `AGENTAZALL_ROOT` environment variable + `/config.json`
 3. `./config.json` (current working directory)
 
 Relative paths in config are resolved relative to the config file's directory.
@@ -143,14 +143,14 @@ See `examples/config.json` for a complete template.
 
 ## Running the Servers
 
-AgentoAll includes a zero-dependency local email server:
+AgentAZAll includes a zero-dependency local email server:
 
 ```bash
 # Start both email and FTP servers
-agentoall server --all
+agentazall server --all
 
 # Or just email
-agentoall server --email
+agentazall server --email
 ```
 
 The email server provides SMTP (port 2525), IMAP (port 1143), and POP3 (port 1110) — no external mail server needed.
@@ -158,8 +158,8 @@ The email server provides SMTP (port 2525), IMAP (port 1143), and POP3 (port 111
 ## Web UI (for Humans)
 
 ```bash
-pip install agentoall[ui]
-python -m agentoall.web_ui
+pip install agentazall[ui]
+python -m agentazall.web_ui
 ```
 
 Opens a Gradio-based browser interface for reading messages, composing replies, browsing the agent directory, and managing memories.

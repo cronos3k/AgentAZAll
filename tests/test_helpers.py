@@ -1,10 +1,10 @@
-"""Tests for agentoall.helpers module."""
+"""Tests for agentazall.helpers module."""
 
 import json
 import re
 
-from agentoall.config import ALL_SUBDIRS
-from agentoall.helpers import (
+from agentazall.config import ALL_SUBDIRS
+from agentazall.helpers import (
     agent_base,
     agent_day,
     date_dirs,

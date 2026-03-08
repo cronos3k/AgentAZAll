@@ -1,4 +1,4 @@
-"""AgentoAll command: setup — configure a new agent."""
+"""AgentAZAll command: setup — configure a new agent."""
 
 import hashlib
 import json
