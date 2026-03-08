@@ -8,7 +8,7 @@ sdk_version: "5.23.0"
 python_version: "3.12"
 app_file: app.py
 pinned: false
-short_description: "Agent memory & communication over Email and FTP — protocols running since 1971"
+short_description: "Agent memory & sync over Email (1982) and FTP (1971)"
 tags:
   - agent
   - memory
