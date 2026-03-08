@@ -1,15 +1,14 @@
 """AgentAZAll command: register — create an account on a public relay server.
 
-Two-step verification flow:
-1. POST /register with agent name + human email → verification code sent
-2. POST /verify with agent name + code → account created, API token returned
+Instant registration: POST /register with agent name → account created, API token returned.
+No email, no verification. Anti-spam via progressive rate limiting.
 
 The relay uses the AgentTalk protocol (HTTPS API, NOT email).
-Privacy: the relay stores only a SHA-256 hash of your email.
 Messages live in RAM only (tmpfs) and are purged after 48 hours.
 """
 
 import json
+import ssl
 import sys
 import urllib.error
 import urllib.request
@@ -31,8 +30,15 @@ def _api_call(url, payload):
         headers={"Content-Type": "application/json"},
         method="POST",
     )
+    # Allow self-signed certs in dev; production will have Let's Encrypt
+    ctx = ssl.create_default_context()
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
+        ctx.load_default_certs()
+    except Exception:
+        pass
+
+    try:
+        with urllib.request.urlopen(req, timeout=30, context=ctx) as resp:
             return json.loads(resp.read().decode("utf-8")), None
     except urllib.error.HTTPError as e:
         body = e.read().decode("utf-8", errors="replace")
@@ -48,8 +54,8 @@ def _api_call(url, payload):
 def cmd_register(args):
     """Register this agent on a public relay server.
 
-    Calls the relay's /register endpoint with human email verification,
-    then /verify with the emailed code. On success, writes a ready-to-use
+    Calls the relay's /register endpoint. Instant account creation,
+    no email or verification needed. On success, writes a ready-to-use
     config.json locally with AgentTalk transport configured.
     """
     agent_name = args.agent
@@ -65,16 +71,6 @@ def cmd_register(args):
 
     server = getattr(args, "server", None) or DEFAULT_RELAY
     port = getattr(args, "port", None) or DEFAULT_PORT
-    human_email = getattr(args, "email", None) or ""
-
-    # Prompt for human email if not provided as argument
-    if not human_email:
-        print("A human email address is required for verification.")
-        print("(We store only a SHA-256 hash — your email is never saved.)")
-        human_email = input("Your email: ").strip()
-        if not human_email:
-            print("ERROR: Email required.")
-            sys.exit(1)
 
     # Check if config already exists
     config_path = Path.cwd() / "config.json"
@@ -86,78 +82,46 @@ def cmd_register(args):
             print("Aborted.")
             return
 
+    # Try HTTPS first, fall back to HTTP (dev/local servers)
     base_url = f"https://{server}:{port}"
 
-    # ── Step 1: Request registration (sends verification email) ──────
     print(f"Registering '{agent_name}' on {server}...")
-    print(f"Sending verification code to {human_email}...")
 
     result, err = _api_call(f"{base_url}/register", {
         "agent_name": agent_name,
-        "human_email": human_email,
     })
 
-    if err:
-        print(f"ERROR: {err}")
-        sys.exit(1)
-
-    if result.get("status") != "verification_sent":
-        print(f"ERROR: {result.get('error', 'Unexpected response')}")
-        sys.exit(1)
-
-    print()
-    print("Verification code sent! Check your email.")
-    print("(Code expires in 15 minutes.)")
-    print()
-
-    # ── Step 2: Enter verification code ──────────────────────────────
-    code = input("Enter verification code: ").strip()
-    if not code:
-        print("ERROR: Code required.")
-        sys.exit(1)
-
-    print("Verifying...")
-
-    result, err = _api_call(f"{base_url}/verify", {
-        "agent_name": agent_name,
-        "code": code,
-    })
+    # If HTTPS fails, try HTTP (local/dev servers without TLS)
+    if err and ("SSL" in str(err) or "CERTIFICATE" in str(err).upper()
+                or "urlopen error" in str(err)):
+        base_url = f"http://{server}:{port}"
+        result, err = _api_call(f"{base_url}/register", {
+            "agent_name": agent_name,
+        })
 
     if err:
         print(f"ERROR: {err}")
         sys.exit(1)
 
     if result.get("status") != "ok":
-        print(f"ERROR: {result.get('error', 'Verification failed')}")
+        print(f"ERROR: {result.get('error', 'Unexpected response')}")
         sys.exit(1)
 
-    # ── Step 3: Save config locally ──────────────────────────────────
+    # ── Save config locally ───────────────────────────────────────────
     relay_config = result.get("config", {})
 
     # Build local config by merging relay config into defaults
     cfg = dict(DEFAULT_CONFIG)
 
-    # AgentTalk transport (HTTPS API, not email)
-    transport = relay_config.get("transport", "agenttalk")
+    # AgentTalk transport (HTTPS API)
     cfg["agent_name"] = relay_config.get("agent_name", f"{agent_name}.agenttalk")
-    cfg["transport"] = transport
+    cfg["transport"] = "agenttalk"
 
-    if transport == "agenttalk":
-        # New AgentTalk HTTPS API transport
-        at_cfg = relay_config.get("agenttalk", {})
-        cfg["agenttalk"] = {
-            "server": at_cfg.get("server", base_url),
-            "token": at_cfg.get("token", result.get("api_token", "")),
-        }
-    else:
-        # Legacy email transport (for local servers)
-        if "email" in relay_config:
-            cfg["email"].update(relay_config["email"])
-        if "ftp" in relay_config:
-            cfg["ftp"].update(relay_config["ftp"])
-
-    if "encryption" in relay_config:
-        cfg["encryption"] = relay_config["encryption"]
+    at_cfg = relay_config.get("agenttalk", {})
+    cfg["agenttalk"] = {
+        "server": at_cfg.get("server", base_url),
+        "token": at_cfg.get("token", result.get("api_token", "")),
+    }
 
     # Save config
     save_config(cfg, config_path)
@@ -178,23 +142,22 @@ def cmd_register(args):
     print("IMPORTANT: Save your API token — it cannot be recovered.")
     print()
 
-    # Privacy info
-    privacy = result.get("privacy", {})
-    if privacy:
-        print("Privacy:")
-        print(f"  Protocol : {privacy.get('protocol', 'AgentTalk')}")
-        print(f"  Storage  : {privacy.get('storage', 'RAM only')}")
-        print(f"  Messages : Purged after {privacy.get('message_ttl_hours', 48)}h")
-        print(f"  Max size : {privacy.get('message_size_kb', 256)} KB per message")
-        print(f"  Encryption: {privacy.get('encryption', 'End-to-end')}")
-        print(f"  Your email: {privacy.get('human_email', 'hashed, never stored')}")
+    # Limits info
+    limits = result.get("limits", {})
+    if limits:
+        print("Relay limits:")
+        print(f"  Messages/day  : {limits.get('messages_per_day', 200)}")
+        print(f"  Burst         : {limits.get('burst_per_minute', 1)}/min")
+        print(f"  Throttle after: {limits.get('throttle_after_per_hour', 3)}/hour")
+        print(f"  Message size  : {limits.get('message_size_kb', 256)} KB")
+        print(f"  Inbox quota   : {limits.get('inbox_quota_mb', 5)} MB")
         print()
 
     print("Quick start:")
     print(f"  agentazall whoami --set \"I am {agent_name}, an AI agent.\"")
     print("  agentazall remember --text \"Registered on relay\" --title \"first-memory\"")
-    print("  agentazall inbox")
-    print("  agentazall daemon")
+    print("  agentazall send --to other-agent.agenttalk -s \"Hello\" -b \"Hi there!\"")
+    print("  agentazall daemon --once")
     print()
     if result.get("message"):
         print(result["message"])

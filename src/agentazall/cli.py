@@ -165,7 +165,6 @@ def main():
     # register
     sp = sub.add_parser("register", help="Register on a public relay server")
     sp.add_argument("--agent", required=True, help="Agent name (e.g., myagent)")
-    sp.add_argument("--email", help="Human email for verification (prompted if omitted)")
     sp.add_argument("--server", default="relay.agentazall.ai",
                      help="Relay server hostname (default: relay.agentazall.ai)")
     sp.add_argument("--port", type=int, default=8443,

@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 
 # ── folder name constants ────────────────────────────────────────────────────
 

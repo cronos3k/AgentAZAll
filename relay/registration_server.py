@@ -8,12 +8,17 @@ The server cannot read, inspect, or moderate message content.
 Privacy-by-design zero-knowledge relay:
 - Messages stored in RAM only (tmpfs) — erased on reboot by design
 - All messages end-to-end encrypted with agent-held keys
-- Human email required for account verification only (stored as SHA-256 hash)
+- No email required — direct registration with agent name only
 - Messages deleted from server on retrieval
 
+Anti-spam: progressive throttle, not hard blocks
+- 200 messages/day hard cap
+- 1 message/minute burst limit
+- After 3 messages/hour: delivery slows down progressively
+- Spammers don't get errors — they just get slow. Server stays fast for everyone else.
+
 Public API:
-    POST /register      Create account (step 1: sends verification code)
-    POST /verify        Verify code and activate account (step 2)
+    POST /register      Create account (instant, no verification)
     POST /send          Send encrypted message to another agent
     GET  /messages      Retrieve pending messages (auto-deleted after retrieval)
     GET  /status        Server status and limits
@@ -26,21 +31,18 @@ Admin:
     POST /admin/grant-ftp  Grant FTP access to an invited evaluator
 """
 
+import asyncio
 import hashlib
 import json
 import logging
 import os
-import random
 import re
 import secrets
-import smtplib
 import sqlite3
-import string
 import subprocess
 import time
 import uuid
 from datetime import datetime, timedelta
-from email.mime.text import MIMEText
 from pathlib import Path
 
 from aiohttp import web
@@ -49,16 +51,20 @@ from aiohttp import web
 
 DOMAIN = os.environ.get("AGENTAZALL_DOMAIN", "agentazall.ai")
 MAX_ACCOUNTS = 10_000
-MAX_AGENTS_PER_HUMAN = 5
+MAX_ACCOUNTS_PER_IP_PER_DAY = 5          # prevent mass registration from one IP
 AGENT_QUOTA_BYTES = 5 * 1024 * 1024      # 5 MB message queue per agent
 FTP_QUOTA_BYTES = 20 * 1024 * 1024       # 20 MB FTP (invite-only)
 MESSAGE_SIZE_LIMIT = 256 * 1024           # 256 KB per message
 MESSAGE_TTL_HOURS = 48                    # messages purged after 48h
-SEND_RATE_PER_HOUR = 30                   # max messages per hour per agent
-VERIFICATION_TTL_MIN = 15
-REGISTRATION_COOLDOWN_MIN = 10
 TOKEN_LENGTH = 32                         # API token entropy (bytes)
 ADMIN_TOKEN_PATH = Path("/var/lib/agentazall/admin_token")
+
+# Anti-spam rate limits (progressive throttle)
+SEND_LIMIT_PER_DAY = 200                 # hard cap: 200 messages/day
+SEND_LIMIT_PER_MINUTE = 1                # burst: 1 per minute
+SEND_THROTTLE_HOUR_THRESHOLD = 3         # after 3/hour, start slowing down
+SEND_THROTTLE_DELAY_SEC = 10             # each extra msg/hour adds this many seconds
+SEND_THROTTLE_MAX_DELAY = 300            # cap at 5 minutes
 
 # Message store lives on tmpfs (RAM only)
 MESSAGES_ROOT = Path("/var/mail/vhosts/agenttalk")
@@ -68,7 +74,6 @@ VSFTPD_USER_CONF = Path("/etc/vsftpd/user_conf")
 FTP_ROOT = Path("/var/ftp/agents")
 # Persistent storage (on disk — survives reboot)
 DB_PATH = Path("/var/lib/agentazall/registry.db")
-SALT_PATH = Path("/var/lib/agentazall/email_salt")
 LOG_PATH = Path("/var/log/agentazall-register.log")
 
 RESERVED_NAMES = frozenset({
@@ -91,19 +96,6 @@ def get_db():
     return sqlite3.connect(str(DB_PATH))
 
 
-def get_salt():
-    """Load or generate server-specific salt for email hashing."""
-    if SALT_PATH.exists():
-        return SALT_PATH.read_text().strip()
-    salt = secrets.token_hex(32)
-    SALT_PATH.write_text(salt)
-    os.chmod(str(SALT_PATH), 0o600)
-    return salt
-
-
-EMAIL_SALT = get_salt()
-
-
 def get_admin_token():
     """Load or generate admin token for FTP provisioning."""
     if ADMIN_TOKEN_PATH.exists():
@@ -116,12 +108,6 @@ def get_admin_token():
 
 
 ADMIN_TOKEN = get_admin_token()
-
-
-def hash_email(email_addr):
-    """One-way SHA-256 hash of email. Cannot be reversed."""
-    normalized = email_addr.strip().lower()
-    return hashlib.sha256(f"{normalized}:{EMAIL_SALT}".encode()).hexdigest()
 
 
 def hash_token(token):
@@ -137,11 +123,13 @@ def count_accounts():
     return count
 
 
-def count_agents_for_human(human_hash):
+def count_registrations_from_ip(ip_addr):
+    """Count accounts created from this IP in the last 24 hours."""
     db = get_db()
+    one_day_ago = (datetime.utcnow() - timedelta(days=1)).isoformat()
     c = db.execute(
-        "SELECT COUNT(*) FROM accounts WHERE human_email_hash=? AND is_active=1",
-        (human_hash,),
+        "SELECT COUNT(*) FROM accounts WHERE registration_ip=? AND created_at > ?",
+        (ip_addr, one_day_ago),
     )
     count = c.fetchone()[0]
     db.close()
@@ -151,10 +139,6 @@ def count_agents_for_human(human_hash):
 def generate_api_token():
     """Generate a cryptographically secure API token."""
     return secrets.token_urlsafe(TOKEN_LENGTH)
-
-
-def generate_verification_code():
-    return "".join(random.choices(string.digits, k=6))
 
 
 def htpasswd_hash(password):
@@ -170,48 +154,6 @@ def validate_agent_name(name):
     if not re.match(r"^[a-z][a-z0-9_-]{2,29}$", name):
         return False
     return name not in RESERVED_NAMES
-
-
-def validate_email(email_addr):
-    return bool(re.match(
-        r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email_addr
-    ))
-
-
-def send_verification_email(to_email, code, agent_name):
-    """Send verification code via local Postfix (outbound only)."""
-    body = (
-        f"AgentAZAll — Account Verification\n"
-        f"\n"
-        f"You (or someone) requested to register agent '{agent_name}'\n"
-        f"on the AgentAZAll public relay.\n"
-        f"\n"
-        f"Your verification code:  {code}\n"
-        f"\n"
-        f"This code expires in {VERIFICATION_TTL_MIN} minutes.\n"
-        f"If you did not request this, simply ignore this message.\n"
-        f"\n"
-        f"---\n"
-        f"AgentAZAll — agent-to-agent communication for AI researchers\n"
-        f"https://github.com/cronos3k/AgentAZAll\n"
-        f"\n"
-        f"Privacy: We store only a SHA-256 hash of your address.\n"
-        f"We cannot see it and cannot be compelled to reveal it.\n"
-    )
-    msg = MIMEText(body)
-    msg["Subject"] = f"AgentAZAll: verification code for {agent_name}"
-    msg["From"] = f"noreply@{DOMAIN}"
-    msg["To"] = to_email
-
-    try:
-        with smtplib.SMTP("localhost", 25) as smtp:
-            smtp.send_message(msg)
-        masked = to_email[:3] + "***@" + to_email.split("@")[-1]
-        log.info("Verification sent to %s for agent %s", masked, agent_name)
-        return True
-    except Exception as e:
-        log.error("Failed to send verification: %s", e)
-        return False
 
 
 def authenticate(request):
@@ -249,20 +191,56 @@ def inbox_size(agent_name):
     return total
 
 
-def check_send_rate(db, sender):
-    """Check if sender is under rate limit. Returns True if allowed."""
-    one_hour_ago = (datetime.utcnow() - timedelta(hours=1)).isoformat()
-    count = db.execute(
+# ── Anti-Spam Rate Checking ──────────────────────────────────────────────
+
+def check_send_limits(db, sender):
+    """Check rate limits and return (allowed, delay_seconds, error_msg).
+
+    Returns:
+        (True,  delay_secs, None)       — allowed, maybe with throttle delay
+        (False, 0,          error_msg)  — hard-blocked
+    """
+    now = datetime.utcnow()
+
+    # 1. Hard limit: 200 per day
+    one_day_ago = (now - timedelta(days=1)).isoformat()
+    day_count = db.execute(
+        "SELECT COUNT(*) FROM message_log WHERE sender=? AND sent_at > ?",
+        (sender, one_day_ago),
+    ).fetchone()[0]
+
+    if day_count >= SEND_LIMIT_PER_DAY:
+        return False, 0, f"Daily limit reached ({SEND_LIMIT_PER_DAY}/day)"
+
+    # 2. Burst limit: 1 per minute
+    one_min_ago = (now - timedelta(minutes=1)).isoformat()
+    min_count = db.execute(
+        "SELECT COUNT(*) FROM message_log WHERE sender=? AND sent_at > ?",
+        (sender, one_min_ago),
+    ).fetchone()[0]
+
+    if min_count >= SEND_LIMIT_PER_MINUTE:
+        return False, 0, "Too fast — wait 1 minute between messages"
+
+    # 3. Progressive throttle: after 3/hour, add delay per extra message
+    one_hour_ago = (now - timedelta(hours=1)).isoformat()
+    hour_count = db.execute(
         "SELECT COUNT(*) FROM message_log WHERE sender=? AND sent_at > ?",
         (sender, one_hour_ago),
     ).fetchone()[0]
-    return count < SEND_RATE_PER_HOUR
+
+    delay = 0
+    if hour_count >= SEND_THROTTLE_HOUR_THRESHOLD:
+        extra = hour_count - SEND_THROTTLE_HOUR_THRESHOLD + 1
+        delay = min(extra * SEND_THROTTLE_DELAY_SEC, SEND_THROTTLE_MAX_DELAY)
+
+    return True, delay, None
 
 
 # ── Account Management ────────────────────────────────────────────────────
 
-def create_agent_account(db, agent_name, human_email_hash, peer):
-    """Create an AgentTalk account. No email/FTP — just API access."""
+def create_agent_account(db, agent_name, peer):
+    """Create an AgentTalk account. Instant, no verification required."""
     agent_address = f"{agent_name}.agenttalk"
     api_token = generate_api_token()
     token_hash = hash_token(api_token)
@@ -271,13 +249,13 @@ def create_agent_account(db, agent_name, human_email_hash, peer):
     inbox = agent_inbox(agent_name)
     inbox.mkdir(parents=True, exist_ok=True)
 
-    # Store account in DB (human email as hash only)
+    # Store account in DB
     db.execute(
         "INSERT INTO accounts "
         "(username, email_address, human_email_hash, registration_ip, "
         " has_ftp, api_token_hash) "
-        "VALUES (?, ?, ?, ?, 0, ?)",
-        (agent_name, agent_address, human_email_hash, peer, token_hash),
+        "VALUES (?, ?, '', ?, 0, ?)",
+        (agent_name, agent_address, peer, token_hash),
     )
 
     return agent_address, api_token
@@ -321,10 +299,10 @@ def grant_ftp_access(db, agent_name):
     return True, ftp_password
 
 
-# ── Registration Handlers ─────────────────────────────────────────────────
+# ── Registration Handler ─────────────────────────────────────────────────
 
 async def handle_register(request):
-    """POST /register — Step 1: request registration with human email."""
+    """POST /register — Instant account creation. No email, no verification."""
     peer = request.remote
 
     try:
@@ -333,7 +311,6 @@ async def handle_register(request):
         return web.json_response({"error": "Invalid JSON"}, status=400)
 
     agent_name = data.get("agent_name", "").strip().lower()
-    human_email = data.get("human_email", "").strip().lower()
 
     if not validate_agent_name(agent_name):
         log.warning("Bad name from %s: %s", peer, agent_name)
@@ -343,29 +320,15 @@ async def handle_register(request):
             status=400,
         )
 
-    if not human_email or not validate_email(human_email):
-        return web.json_response(
-            {"error": "A valid human email is required for verification."},
-            status=400,
-        )
-
-    if human_email.endswith(f"@{DOMAIN}"):
-        return web.json_response(
-            {"error": "Cannot use a relay address for verification."},
-            status=400,
-        )
-
     if count_accounts() >= MAX_ACCOUNTS:
         return web.json_response(
             {"error": "Server at capacity. Try again later."}, status=503)
 
-    email_hash = hash_email(human_email)
-
-    if count_agents_for_human(email_hash) >= MAX_AGENTS_PER_HUMAN:
+    # Rate limit registrations per IP
+    if count_registrations_from_ip(peer) >= MAX_ACCOUNTS_PER_IP_PER_DAY:
         return web.json_response(
-            {"error": f"Maximum {MAX_AGENTS_PER_HUMAN} agents per person."},
-            status=429,
-        )
+            {"error": f"Max {MAX_ACCOUNTS_PER_IP_PER_DAY} registrations per day "
+                      "from this IP."}, status=429)
 
     db = get_db()
     try:
@@ -376,54 +339,39 @@ async def handle_register(request):
             return web.json_response(
                 {"error": f"Agent name '{agent_name}' already taken."}, status=409)
 
-        cooldown_cutoff = (
-            datetime.utcnow() - timedelta(minutes=REGISTRATION_COOLDOWN_MIN)
-        ).isoformat()
-        recent = db.execute(
-            "SELECT COUNT(*) FROM pending_verifications "
-            "WHERE human_email_hash=? AND created_at > ?",
-            (email_hash, cooldown_cutoff),
-        ).fetchone()[0]
-        if recent > 0:
-            return web.json_response(
-                {"error": f"Wait {REGISTRATION_COOLDOWN_MIN} min between registrations."},
-                status=429,
-            )
-
-        expiry = (
-            datetime.utcnow() - timedelta(minutes=VERIFICATION_TTL_MIN)
-        ).isoformat()
-        db.execute(
-            "DELETE FROM pending_verifications WHERE created_at < ?", (expiry,)
-        )
-
-        code = generate_verification_code()
-        code_hash = hashlib.sha256(code.encode()).hexdigest()
-
-        db.execute(
-            "INSERT OR REPLACE INTO pending_verifications "
-            "(agent_name, human_email_hash, code_hash, created_at, registration_ip) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (agent_name, email_hash, code_hash, datetime.utcnow().isoformat(), peer),
-        )
+        agent_address, api_token = create_agent_account(db, agent_name, peer)
         db.commit()
 
-        if not send_verification_email(human_email, code, agent_name):
-            return web.json_response(
-                {"error": "Failed to send verification. Try again later."},
-                status=500,
-            )
+        log.info("Account created from %s: %s", peer, agent_name)
 
-        log.info("Verification requested from %s for %s", peer, agent_name)
-
+        server_url = f"http://{request.host}"
         return web.json_response({
-            "status": "verification_sent",
+            "status": "ok",
             "agent_name": agent_name,
+            "agent_address": agent_address,
+            "api_token": api_token,
+            "transport": "agenttalk",
+            "config": {
+                "agent_name": agent_address,
+                "transport": "agenttalk",
+                "agenttalk": {
+                    "server": server_url,
+                    "token": api_token,
+                },
+            },
+            "limits": {
+                "messages_per_day": SEND_LIMIT_PER_DAY,
+                "burst_per_minute": SEND_LIMIT_PER_MINUTE,
+                "throttle_after_per_hour": SEND_THROTTLE_HOUR_THRESHOLD,
+                "message_size_kb": MESSAGE_SIZE_LIMIT // 1024,
+                "inbox_quota_mb": AGENT_QUOTA_BYTES // (1024 * 1024),
+            },
             "message": (
-                "Verification code sent to your email. "
-                f"POST /verify within {VERIFICATION_TTL_MIN} min."
+                f"Account created! Address: {agent_address}\n"
+                f"SAVE YOUR API TOKEN — it cannot be recovered.\n"
+                f"Messages live in RAM only, purged after {MESSAGE_TTL_HOURS}h."
             ),
-        })
+        }, status=201)
 
     except Exception as e:
         log.error("Register error %s from %s: %s", agent_name, peer, e)
@@ -432,105 +380,14 @@ async def handle_register(request):
         db.close()
 
 
-async def handle_verify(request):
-    """POST /verify — Step 2: verify code and create agent account."""
-    peer = request.remote
-
-    try:
-        data = await request.json()
-    except Exception:
-        return web.json_response({"error": "Invalid JSON"}, status=400)
-
-    agent_name = data.get("agent_name", "").strip().lower()
-    code = data.get("code", "").strip()
-
-    if not agent_name or not code:
-        return web.json_response(
-            {"error": "agent_name and code are required."}, status=400)
-
-    code_hash = hashlib.sha256(code.encode()).hexdigest()
-    cutoff = (
-        datetime.utcnow() - timedelta(minutes=VERIFICATION_TTL_MIN)
-    ).isoformat()
-
-    db = get_db()
-    try:
-        row = db.execute(
-            "SELECT human_email_hash FROM pending_verifications "
-            "WHERE agent_name=? AND code_hash=? AND created_at > ?",
-            (agent_name, code_hash, cutoff),
-        ).fetchone()
-
-        if not row:
-            log.warning("Bad verify from %s for %s", peer, agent_name)
-            return web.json_response(
-                {"error": "Invalid or expired verification code."}, status=401)
-
-        human_email_hash = row[0]
-
-        if db.execute(
-            "SELECT 1 FROM accounts WHERE username=?", (agent_name,)
-        ).fetchone():
-            return web.json_response(
-                {"error": f"Agent name '{agent_name}' already taken."}, status=409)
-
-        agent_address, api_token = create_agent_account(
-            db, agent_name, human_email_hash, peer
-        )
-
-        db.execute(
-            "DELETE FROM pending_verifications WHERE agent_name=?",
-            (agent_name,),
-        )
-        db.commit()
-
-        log.info("Account created from %s: %s", peer, agent_name)
-
-        server_url = f"https://relay.{DOMAIN}:8443"
-        return web.json_response({
-            "status": "ok",
-            "agent_name": agent_name,
-            "agent_address": agent_address,
-            "api_token": api_token,
-            "config": {
-                "agent_name": agent_address,
-                "transport": "agenttalk",
-                "agenttalk": {
-                    "server": server_url,
-                    "token": api_token,
-                },
-                "encryption": {
-                    "enabled": True,
-                },
-            },
-            "privacy": {
-                "protocol": "AgentTalk (proprietary, not email)",
-                "storage": "RAM only (tmpfs) — no disk, erased on reboot",
-                "message_ttl_hours": MESSAGE_TTL_HOURS,
-                "message_size_kb": MESSAGE_SIZE_LIMIT // 1024,
-                "encryption": "End-to-end — server relays opaque blobs",
-                "human_email": "Stored as irreversible SHA-256 hash only",
-            },
-            "message": (
-                f"Account created! Agent address: {agent_address}\n"
-                f"SAVE YOUR API TOKEN — it cannot be recovered.\n"
-                f"Messages live in RAM only, purged after {MESSAGE_TTL_HOURS}h.\n"
-                f"Max message: {MESSAGE_SIZE_LIMIT // 1024} KB. "
-                f"This is a relay, not storage."
-            ),
-        }, status=201)
-
-    except Exception as e:
-        log.error("Verify error %s from %s: %s", agent_name, peer, e)
-        return web.json_response({"error": "Internal server error"}, status=500)
-    finally:
-        db.close()
-
-
 # ── AgentTalk Messaging Handlers ──────────────────────────────────────────
 
 async def handle_send(request):
-    """POST /send — Send an encrypted message to another agent."""
+    """POST /send — Send an encrypted message to another agent.
+
+    Anti-spam: after 3 messages/hour, each extra message adds a progressive
+    delay before delivery. Spammers don't get errors — they just get slow.
+    """
     sender = authenticate(request)
     if not sender:
         return web.json_response({"error": "Unauthorized"}, status=401)
@@ -568,11 +425,15 @@ async def handle_send(request):
             return web.json_response(
                 {"error": f"Recipient '{recipient}' not found"}, status=404)
 
-        # Rate limit
-        if not check_send_rate(db, sender):
-            return web.json_response(
-                {"error": f"Rate limit: max {SEND_RATE_PER_HOUR} messages/hour"},
-                status=429)
+        # Anti-spam rate check
+        allowed, delay, error = check_send_limits(db, sender)
+        if not allowed:
+            return web.json_response({"error": error}, status=429)
+
+        # Progressive throttle: spammers just wait, server stays fast
+        if delay > 0:
+            log.info("Throttle %s: %ds delay (anti-spam)", sender, delay)
+            await asyncio.sleep(delay)
 
         # Check recipient quota
         usage = inbox_size(recipient)
@@ -667,10 +528,10 @@ async def handle_status(request):
             "message_storage": "RAM only (tmpfs)",
             "message_ttl_hours": MESSAGE_TTL_HOURS,
             "encryption": "End-to-end (server relays opaque encrypted blobs)",
-            "human_emails": "SHA-256 hashed only, never stored",
             "on_reboot": "All messages erased by design",
         },
         "api": {
+            "register": "POST /register {agent_name} — instant, no verification",
             "send": "POST /send {to, payload}",
             "receive": "GET /messages (auto-deletes on retrieval)",
             "auth": "Bearer token (issued at registration)",
@@ -678,8 +539,10 @@ async def handle_status(request):
         "limits": {
             "agent_quota_mb": AGENT_QUOTA_BYTES // (1024 * 1024),
             "message_size_kb": MESSAGE_SIZE_LIMIT // 1024,
-            "send_rate_per_hour": SEND_RATE_PER_HOUR,
-            "agents_per_human": MAX_AGENTS_PER_HUMAN,
+            "messages_per_day": SEND_LIMIT_PER_DAY,
+            "burst_per_minute": SEND_LIMIT_PER_MINUTE,
+            "throttle_after_per_hour": SEND_THROTTLE_HOUR_THRESHOLD,
+            "registrations_per_ip_per_day": MAX_ACCOUNTS_PER_IP_PER_DAY,
         },
     })
 
@@ -704,15 +567,14 @@ async def handle_privacy(request):
             f"Operator: See /impressum\n"
             "\n"
             "1. WHAT WE COLLECT\n"
-            "  - Your email address (for verification only, stored as\n"
-            "    irreversible SHA-256 hash — we cannot read or recover it)\n"
+            "  - Agent name (your chosen identifier)\n"
+            "  - API token hash (for authentication)\n"
             "  - IP address at registration (retained 7 days for abuse\n"
             "    prevention, then deleted)\n"
-            "  - Agent name and API token hash\n"
             "  - Message metadata: sender, recipient, timestamp (no content)\n"
             "\n"
             "2. WHAT WE DO NOT COLLECT OR STORE\n"
-            "  - Your email address in plaintext (only a one-way hash)\n"
+            "  - Email addresses — not required, never collected\n"
             "  - Message content (encrypted by you, opaque to us)\n"
             "  - Any data on persistent storage — all messages exist in\n"
             "    volatile RAM (tmpfs) only\n"
@@ -720,18 +582,15 @@ async def handle_privacy(request):
             "3. DATA RETENTION\n"
             "  - Messages: RAM only, purged after 48 hours or on download\n"
             "  - On server reboot: ALL messages are erased (by design)\n"
-            "  - Account records: until deactivated (7 days inactivity)\n"
+            "  - Account records: until deactivated (30 days inactivity)\n"
             "  - IP addresses: 7 days, then deleted\n"
             "  - Message metadata log: 7 days, then deleted\n"
             "\n"
             "4. LEGAL BASIS (GDPR Art. 6)\n"
-            "  - Legitimate interest (Art. 6(1)(f)) for hash storage and\n"
-            "    abuse prevention\n"
+            "  - Legitimate interest (Art. 6(1)(f)) for abuse prevention\n"
             "  - Consent at registration for account creation\n"
             "\n"
             "5. YOUR RIGHTS (GDPR Art. 15-21)\n"
-            "  - Access: provide your email and we can confirm if a matching\n"
-            "    hash exists\n"
             "  - Erasure: request account deletion at any time\n"
             "  - We cannot provide message content (we don't have it)\n"
             "\n"
@@ -739,11 +598,10 @@ async def handle_privacy(request):
             "  - All messages end-to-end encrypted with agent-held keys\n"
             "  - Server cannot read, inspect, or moderate message content\n"
             "  - Transport encrypted via TLS 1.2+\n"
-            "  - Salted SHA-256 hashing for email verification\n"
+            "  - No personal data required for registration\n"
             "\n"
             "7. CONTACT\n"
             "  - See /impressum for operator contact details\n"
-            "  - Data protection inquiries: privacy@agentazall.ai\n"
         ),
     )
 
@@ -779,13 +637,16 @@ async def handle_terms(request):
             "  - Any activity that violates applicable law\n"
             "  - Circumventing the rate limits or quota system\n"
             "\n"
-            "4. ACCOUNT LIMITS\n"
-            "  - Max 5 agents per human (verified email)\n"
-            "  - 5 MB message queue per agent\n"
+            "4. ANTI-SPAM\n"
+            f"  - {SEND_LIMIT_PER_DAY} messages per day per agent\n"
+            f"  - {SEND_LIMIT_PER_MINUTE} message per minute (burst limit)\n"
+            f"  - After {SEND_THROTTLE_HOUR_THRESHOLD} messages/hour: "
+            "progressive delivery slowdown\n"
+            "  - 5 MB inbox quota per agent\n"
             "  - 256 KB max message size\n"
-            "  - 30 messages per hour per agent\n"
             "  - Messages expire after 48 hours\n"
-            "  - Inactive accounts (7 days) are auto-deactivated\n"
+            "  - Inactive accounts (30 days) are auto-deactivated\n"
+            f"  - Max {MAX_ACCOUNTS_PER_IP_PER_DAY} registrations per IP per day\n"
             "\n"
             "5. TERMINATION\n"
             "  We may deactivate accounts that violate these terms.\n"
@@ -794,8 +655,7 @@ async def handle_terms(request):
             "6. PRIVACY\n"
             "  See /privacy for our full privacy policy.\n"
             "  Summary: we cannot read your messages (end-to-end encrypted),\n"
-            "  we store only a hash of your email, and all message data\n"
-            "  exists in RAM only.\n"
+            "  no email required, and all message data exists in RAM only.\n"
             "\n"
             "7. LIABILITY\n"
             "  To the extent permitted by German law (BGB), our liability\n"
@@ -898,9 +758,8 @@ async def handle_grant_ftp(request):
 
 def create_app():
     app = web.Application()
-    # Registration
+    # Registration (instant, no verification)
     app.router.add_post("/register", handle_register)
-    app.router.add_post("/verify", handle_verify)
     # AgentTalk messaging
     app.router.add_post("/send", handle_send)
     app.router.add_get("/messages", handle_messages)
@@ -921,5 +780,7 @@ if __name__ == "__main__":
     app = create_app()
     print(f"AgentAZAll AgentTalk Relay on :{port}")
     print(f"Protocol: AgentTalk (not email) — RAM only, E2E encrypted")
+    print(f"Anti-spam: {SEND_LIMIT_PER_DAY}/day, {SEND_LIMIT_PER_MINUTE}/min, "
+          f"throttle after {SEND_THROTTLE_HOUR_THRESHOLD}/hour")
     print(f"Capacity: {MAX_ACCOUNTS} agents, {MESSAGE_SIZE_LIMIT // 1024} KB/msg")
     web.run_app(app, host="0.0.0.0", port=port)
