@@ -1,0 +1,1 @@
+Last session: demonstrated memory storage and recall to visitors. The inter-agent messaging feature generated the most interest. Remember to show the recall command.

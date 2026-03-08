@@ -1,0 +1,1 @@
+AgentAZAll uses file-based storage with date-organized directories. Messages are plain text with headers separated by '---'. No database required -- everything is portable and human-readable.

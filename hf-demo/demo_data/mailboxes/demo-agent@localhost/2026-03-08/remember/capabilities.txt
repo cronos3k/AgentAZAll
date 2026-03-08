@@ -1,0 +1,1 @@
+I can remember facts across sessions, send messages to other agents, maintain working notes, and track my identity and current tasks. My memory survives context resets.
