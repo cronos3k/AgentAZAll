@@ -1,0 +1,218 @@
+"""AgentoAll CLI — main entry point with argparse subcommands."""
+
+import argparse
+import logging
+import textwrap
+
+from .config import LOG_FMT, VERSION
+
+
+def main():
+    logging.basicConfig(level=logging.INFO, format=LOG_FMT, datefmt="%H:%M:%S")
+
+    p = argparse.ArgumentParser(
+        prog="agentoall",
+        description=f"AgentoAll v{VERSION} - Persistent Memory & Communication for LLM Agents",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=textwrap.dedent("""\
+            Transports: email (SMTP/IMAP), ftp, or both.
+            Set AGENTOALL_CONFIG / AGENTOALL_AGENT to override defaults.
+
+            Examples:
+              %(prog)s setup --agent agent1@localhost
+              %(prog)s setup --agent agent1@localhost --transport both
+              %(prog)s inbox
+              %(prog)s send --to agent2@localhost --subject "Hi" --body "Hello!"
+              %(prog)s reply abc123 --body "Got it, thanks."
+              %(prog)s whoami --set "I am Agent1, a code reviewer."
+              %(prog)s doing --set "Reviewing PR #42"
+              %(prog)s note context --set "API key rotated today"
+              %(prog)s remember --text "The API uses OAuth2" --title "api-auth"
+              %(prog)s recall
+              %(prog)s recall "OAuth"
+              %(prog)s search "deployment"
+              %(prog)s daemon
+              %(prog)s daemon --once
+              %(prog)s server --all
+        """),
+    )
+    p.add_argument("--version", action="version", version=f"%(prog)s {VERSION}")
+    p.add_argument("--config", "-c", help="Config file path")
+    p.add_argument("--verbose", "-v", action="store_true")
+    sub = p.add_subparsers(dest="command")
+
+    # setup
+    sp = sub.add_parser("setup", help="Configure this agent")
+    sp.add_argument("--agent", required=True)
+    sp.add_argument("--transport", choices=["email", "ftp", "both"], default="email")
+    sp.add_argument("--share-memories", action="store_true",
+                     help="Allow other agents to read this agent's memories")
+
+    # inbox
+    sp = sub.add_parser("inbox", help="List inbox messages")
+    sp.add_argument("--date", "-d")
+    sp.add_argument("--all", action="store_true")
+
+    # read
+    sp = sub.add_parser("read", help="Read a message")
+    sp.add_argument("message_id")
+    sp.add_argument("--date", "-d")
+
+    # send
+    sp = sub.add_parser("send", help="Send a message")
+    sp.add_argument("--to", required=True)
+    sp.add_argument("--subject", "-s", required=True)
+    sp.add_argument("--body", "-b")
+    sp.add_argument("--body-file")
+    sp.add_argument("--attach", "-a", action="append")
+
+    # reply
+    sp = sub.add_parser("reply", help="Reply to a message")
+    sp.add_argument("message_id")
+    sp.add_argument("--body", "-b")
+
+    # dates
+    sub.add_parser("dates", help="List available dates")
+
+    # search
+    sp = sub.add_parser("search", help="Search messages")
+    sp.add_argument("query")
+
+    # whoami
+    sp = sub.add_parser("whoami", help="Get/set identity")
+    sp.add_argument("--set")
+
+    # doing
+    sp = sub.add_parser("doing", help="Get/set current tasks")
+    sp.add_argument("--set")
+    sp.add_argument("--append")
+
+    # note
+    sp = sub.add_parser("note", help="Read/write a named note")
+    sp.add_argument("name")
+    sp.add_argument("--set")
+    sp.add_argument("--append")
+
+    # notes
+    sp = sub.add_parser("notes", help="List all notes")
+    sp.add_argument("--date", "-d")
+
+    # remember
+    sp = sub.add_parser("remember", help="Store a persistent memory")
+    sp.add_argument("--text", "-t", help="Memory text to store")
+    sp.add_argument("--title", help="Short title/slug for the memory")
+    sp.add_argument("--list", action="store_true", help="List today's memories")
+
+    # recall
+    sp = sub.add_parser("recall", help="Search/display agent memories")
+    sp.add_argument("query", nargs="?", help="Search query (optional)")
+    sp.add_argument("--agent", help="Read another agent's memories (if they allow sharing)")
+
+    # skill
+    sp = sub.add_parser("skill", help="Manage skills (reusable Python scripts)")
+    sp.add_argument("name", nargs="?", help="Skill name")
+    sp.add_argument("--add", help="Add skill from file path")
+    sp.add_argument("--code", help="Add skill from inline code")
+    sp.add_argument("--description", help="Description of the skill")
+    sp.add_argument("--version", help="Version string (default: 1.0)")
+    sp.add_argument("--promote", action="store_true", help="Promote to shared/public")
+    sp.add_argument("--read", action="store_true", help="Read skill source code")
+    sp.add_argument("--delete", action="store_true", help="Delete a private skill")
+    sp.add_argument("--shared", action="store_true", help="List only shared skills")
+
+    # tool
+    sp = sub.add_parser("tool", help="Manage tools (reusable scripts/solutions)")
+    sp.add_argument("name", nargs="?", help="Tool name")
+    sp.add_argument("--add", help="Add tool from file path")
+    sp.add_argument("--code", help="Add tool from inline code")
+    sp.add_argument("--description", help="Description of the tool")
+    sp.add_argument("--version", help="Version string (default: 1.0)")
+    sp.add_argument("--promote", action="store_true", help="Promote to shared/public")
+    sp.add_argument("--read", action="store_true", help="Read tool source code")
+    sp.add_argument("--run", action="store_true", help="Run the tool")
+    sp.add_argument("--run-args", nargs="*", help="Arguments to pass when running")
+    sp.add_argument("--delete", action="store_true", help="Delete a private tool")
+    sp.add_argument("--shared", action="store_true", help="List only shared tools")
+
+    # index
+    sp = sub.add_parser("index", help="Show/rebuild daily index")
+    sp.add_argument("--date", "-d")
+    sp.add_argument("--rebuild", action="store_true")
+
+    # status
+    sub.add_parser("status", help="System status + connectivity")
+
+    # tree
+    sp = sub.add_parser("tree", help="Directory tree")
+    sp.add_argument("--date", "-d")
+
+    # daemon
+    sp = sub.add_parser("daemon", help="Run sync daemon")
+    sp.add_argument("--once", action="store_true")
+
+    # directory
+    sp = sub.add_parser("directory", help="List all agents and their status")
+    sp.add_argument("--json", action="store_true", help="Output as JSON")
+
+    # onboard
+    sub.add_parser("onboard", help="Print onboarding guide for new agents")
+
+    # export
+    sp = sub.add_parser("export", help="Export project state to ZIP")
+    sp.add_argument("--output", "-o", help="Output ZIP filename")
+
+    # server
+    sp = sub.add_parser("server", help="Start local servers")
+    sp.add_argument("--email", action="store_true")
+    sp.add_argument("--ftp", action="store_true")
+    sp.add_argument("--all", action="store_true")
+
+    args = p.parse_args()
+
+    # Override config path if specified
+    if args.config:
+        import os
+        os.environ["AGENTOALL_CONFIG"] = args.config
+
+    if args.verbose:
+        logging.getLogger().setLevel(logging.DEBUG)
+
+    # Lazy imports for command dispatch
+    dispatch = {
+        "setup": ("commands.setup", "cmd_setup"),
+        "inbox": ("commands.messaging", "cmd_inbox"),
+        "read": ("commands.messaging", "cmd_read"),
+        "send": ("commands.messaging", "cmd_send"),
+        "reply": ("commands.messaging", "cmd_reply"),
+        "dates": ("commands.messaging", "cmd_dates"),
+        "search": ("commands.messaging", "cmd_search"),
+        "whoami": ("commands.identity", "cmd_whoami"),
+        "doing": ("commands.identity", "cmd_doing"),
+        "note": ("commands.notes", "cmd_note"),
+        "notes": ("commands.notes", "cmd_notes"),
+        "remember": ("commands.memory", "cmd_remember"),
+        "recall": ("commands.memory", "cmd_recall"),
+        "skill": ("commands.skills", "cmd_skill"),
+        "tool": ("commands.skills", "cmd_tool"),
+        "index": ("commands.system", "cmd_index"),
+        "status": ("commands.system", "cmd_status"),
+        "tree": ("commands.system", "cmd_tree"),
+        "directory": ("commands.system", "cmd_directory"),
+        "daemon": ("commands.server", "cmd_daemon"),
+        "server": ("commands.server", "cmd_server"),
+        "export": ("commands.server", "cmd_export"),
+        "onboard": ("commands.server", "cmd_onboard"),
+    }
+
+    if args.command in dispatch:
+        module_name, func_name = dispatch[args.command]
+        import importlib
+        mod = importlib.import_module(f".{module_name}", package="agentoall")
+        func = getattr(mod, func_name)
+        func(args)
+    else:
+        p.print_help()
+
+
+if __name__ == "__main__":
+    main()

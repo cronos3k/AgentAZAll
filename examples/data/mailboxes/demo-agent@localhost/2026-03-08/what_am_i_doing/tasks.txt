@@ -1,0 +1,3 @@
+CURRENT: Demonstrating AgentoAll features for new users.
+NEXT: Show how memory persistence works across sessions.
+BLOCKED: Nothing.

@@ -1,0 +1,34 @@
+{
+  "agent_name": "my-agent@localhost",
+  "agent_key": "",
+  "allow_memory_sharing": false,
+  "mailbox_dir": "./data/mailboxes",
+  "transport": "email",
+  "sync_interval": 10,
+  "log_file": "./logs/agentoall.log",
+  "email": {
+    "imap_server": "127.0.0.1",
+    "imap_port": 1143,
+    "imap_ssl": false,
+    "imap_folder": "INBOX",
+    "smtp_server": "127.0.0.1",
+    "smtp_port": 2525,
+    "smtp_ssl": false,
+    "smtp_starttls": false,
+    "pop3_server": "127.0.0.1",
+    "pop3_port": 1110,
+    "pop3_ssl": false,
+    "use_pop3": false,
+    "username": "my-agent@localhost",
+    "password": "changeme",
+    "sync_special_folders": true
+  },
+  "ftp": {
+    "host": "127.0.0.1",
+    "port": 2121,
+    "port_range": [2121, 2199],
+    "user": "agentoftp",
+    "password": "changeme",
+    "root": "./data/ftp_root"
+  }
+}

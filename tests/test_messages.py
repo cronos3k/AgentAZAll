@@ -1,0 +1,81 @@
+"""Tests for agentoall.messages module."""
+
+
+
+from agentoall.messages import format_message, parse_headers_only, parse_message
+
+
+class TestFormatMessage:
+    def test_basic_format(self):
+        content, msg_id = format_message(
+            "alice@localhost", "bob@localhost",
+            "Test Subject", "Hello Bob!"
+        )
+        assert "From: alice@localhost" in content
+        assert "To: bob@localhost" in content
+        assert "Subject: Test Subject" in content
+        assert "Status: new" in content
+        assert "---" in content
+        assert "Hello Bob!" in content
+        assert len(msg_id) == 12
+
+    def test_custom_id(self):
+        content, msg_id = format_message(
+            "a@l", "b@l", "S", "Body", msg_id="custom123456"
+        )
+        assert msg_id == "custom123456"
+        assert "Message-ID: custom123456" in content
+
+    def test_with_attachments(self):
+        content, _ = format_message(
+            "a@l", "b@l", "S", "Body",
+            attachments=["/path/to/file.pdf", "/path/to/image.png"]
+        )
+        assert "Attachments: file.pdf, image.png" in content
+
+
+class TestParseMessage:
+    def test_round_trip(self, tmp_path):
+        content, msg_id = format_message(
+            "alice@localhost", "bob@localhost",
+            "Round Trip", "Body content here."
+        )
+        fpath = tmp_path / f"{msg_id}.txt"
+        fpath.write_text(content, encoding="utf-8")
+
+        headers, body = parse_message(fpath)
+        assert headers["From"] == "alice@localhost"
+        assert headers["To"] == "bob@localhost"
+        assert headers["Subject"] == "Round Trip"
+        assert headers["Status"] == "new"
+        assert "Body content here." in body
+
+    def test_missing_file(self):
+        headers, body = parse_message("/nonexistent/file.txt")
+        assert headers is None
+        assert body is None
+
+    def test_multiline_body(self, tmp_path):
+        content = "From: a@l\nTo: b@l\nSubject: S\n\n---\nLine 1\nLine 2\nLine 3"
+        fpath = tmp_path / "test.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, body = parse_message(fpath)
+        assert "Line 1" in body
+        assert "Line 3" in body
+
+
+class TestParseHeadersOnly:
+    def test_basic(self, tmp_path):
+        content = "From: a@l\nTo: b@l\nSubject: Hello\nStatus: new\n\n---\nBody"
+        fpath = tmp_path / "test.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers = parse_headers_only(fpath)
+        assert headers["From"] == "a@l"
+        assert headers["Subject"] == "Hello"
+
+    def test_stops_at_separator(self, tmp_path):
+        content = "From: a@l\n\n---\nBody: not a header"
+        fpath = tmp_path / "test.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers = parse_headers_only(fpath)
+        assert "Body" not in headers
