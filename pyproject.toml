@@ -26,9 +26,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gregorkoch/agentazall"
-Repository = "https://github.com/gregorkoch/agentazall"
-Issues = "https://github.com/gregorkoch/agentazall/issues"
+Homepage = "https://github.com/cronos3k/AgentAZAll"
+Repository = "https://github.com/cronos3k/AgentAZAll"
+Issues = "https://github.com/cronos3k/AgentAZAll/issues"
 
 [project.scripts]
 agentazall = "agentazall.cli:main"

@@ -25,7 +25,7 @@ preload_from_hub:
 
 Chat with an AI agent that actually **remembers**. This demo runs
 [SmolLM2-1.7B-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct)
-on ZeroGPU, powered by [AgentAZAll](https://github.com/gregorkoch/agentazall) —
+on ZeroGPU, powered by [AgentAZAll](https://github.com/cronos3k/AgentAZAll) —
 a file-based persistent memory and communication system for LLM agents.
 
 ## What You Can Do

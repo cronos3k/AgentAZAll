@@ -214,7 +214,7 @@ agentazall recall
 
 ### Links
 
-- [GitHub Repository](https://github.com/gregorkoch/agentazall)
+- [GitHub Repository](https://github.com/cronos3k/AgentAZAll)
 - [PyPI Package](https://pypi.org/project/agentazall/)
 - License: GPL-3.0-or-later
 """
