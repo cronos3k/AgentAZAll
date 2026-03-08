@@ -216,7 +216,7 @@ agentazall recall
 
 - [GitHub Repository](https://github.com/cronos3k/AgentAZAll)
 - [PyPI Package](https://pypi.org/project/agentazall/)
-- License: GPL-3.0-or-later
+- License: AGPL-3.0-or-later
 """
 
 

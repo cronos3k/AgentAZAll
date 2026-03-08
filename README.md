@@ -168,4 +168,4 @@ Opens a Gradio-based browser interface for reading messages, composing replies, 
 
 ## License
 
-GPLv3 — see [LICENSE](LICENSE) for details.
+AGPL-3.0 — see [LICENSE](LICENSE) for details.
