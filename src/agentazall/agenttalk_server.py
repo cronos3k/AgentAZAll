@@ -284,8 +284,10 @@ class HTTPResponse:
 class AgentTalkHandler:
     """HTTP request handler for AgentTalk protocol."""
 
-    MAX_MESSAGE_SIZE = 10 * 1024 * 1024  # 10 MB for local server (generous)
-    MAX_INBOX_SIZE = 100 * 1024 * 1024   # 100 MB per agent (local)
+    # Local server: no artificial limits. Your server, your rules.
+    # Only the public relay (relay.agentazall.ai) has tight limits.
+    MAX_MESSAGE_SIZE = 0     # 0 = unlimited
+    MAX_INBOX_SIZE = 0       # 0 = unlimited
 
     def __init__(self, store: AgentTalkStore, max_connections: int = 100):
         self.store = store
@@ -442,9 +444,9 @@ class AgentTalkHandler:
             return HTTPResponse.json_response(
                 {"error": "Recipient required"}, 400)
 
-        # Check payload size
+        # Check payload size (0 = unlimited, local server has no limits)
         payload_bytes = payload.encode("utf-8") if isinstance(payload, str) else payload
-        if len(payload_bytes) > self.MAX_MESSAGE_SIZE:
+        if self.MAX_MESSAGE_SIZE and len(payload_bytes) > self.MAX_MESSAGE_SIZE:
             return HTTPResponse.json_response(
                 {"error": f"Message too large ({len(payload_bytes)} bytes, "
                           f"max {self.MAX_MESSAGE_SIZE})"}, 413)
@@ -454,11 +456,12 @@ class AgentTalkHandler:
             return HTTPResponse.json_response(
                 {"error": f"Recipient '{recipient}' not found"}, 404)
 
-        # Check inbox quota
-        usage = self.store.inbox_size(recipient)
-        if usage + len(payload_bytes) > self.MAX_INBOX_SIZE:
-            return HTTPResponse.json_response(
-                {"error": "Recipient inbox full"}, 507)
+        # Check inbox quota (0 = unlimited)
+        if self.MAX_INBOX_SIZE:
+            usage = self.store.inbox_size(recipient)
+            if usage + len(payload_bytes) > self.MAX_INBOX_SIZE:
+                return HTTPResponse.json_response(
+                    {"error": "Recipient inbox full"}, 507)
 
         msg_id = self.store.deliver(sender, recipient, payload)
 

@@ -224,18 +224,18 @@ class AgentTalkTransport:
             "from": from_addr,
         }
 
-        # Add attachments if any
+        # Add attachments if any — no client-side size limit.
+        # The server decides what it accepts (local = unlimited,
+        # public relay = 256 KB).  If the server rejects, we log.
         if att_paths:
             payload_data["attachments"] = []
             for ap in att_paths:
                 p = Path(ap)
-                if p.exists() and p.stat().st_size <= 256 * 1024:
+                if p.exists():
                     payload_data["attachments"].append({
                         "name": p.name,
                         "data": base64.b64encode(p.read_bytes()).decode("ascii"),
                     })
-                elif p.exists():
-                    log.warning("Attachment %s too large for relay, skipped", p.name)
 
         payload_json = json.dumps(payload_data)
 
