@@ -112,7 +112,7 @@ def _cmd_script_generic(args, kind: str):
             name += ".py"
         src = my_dir / name
         if not src.exists():
-            print(f"{kind.title()} '{args.name}' not found in your private {kind}s.")
+            print(f"{kind.title()} '{args.name}' not found in your private {kind}.")
             return
         dest = pub_dir / name
         shutil.copy2(str(src), str(dest))
@@ -174,27 +174,27 @@ def _cmd_script_generic(args, kind: str):
                 mp.unlink()
             print(f"{kind.title()} '{args.name}' deleted.")
         else:
-            print(f"{kind.title()} '{args.name}' not found in your private {kind}s.")
+            print(f"{kind.title()} '{args.name}' not found in your private {kind}.")
 
     else:
         mine = _list_scripts(my_dir)
         pub = _list_scripts(pub_dir)
         if args.shared:
             if pub:
-                print(f"=== Shared {kind.title()}s ({len(pub)}) ===")
+                print(f"=== Shared {kind.title()} ({len(pub)}) ===")
                 for f in pub:
                     print(_format_script_entry(f, "[shared] "))
             else:
-                print(f"No shared {kind}s available.")
+                print(f"No shared {kind} available.")
         else:
             if mine:
-                print(f"=== My {kind.title()}s ({len(mine)}) ===")
+                print(f"=== My {kind.title()} ({len(mine)}) ===")
                 for f in mine:
                     print(_format_script_entry(f))
             else:
-                print(f"No private {kind}s. Use: {kind} <name> --code '...' or --add <file>")
+                print(f"No private {kind}. Use: {kind} <name> --code '...' or --add <file>")
             if pub:
-                print(f"\n=== Shared {kind.title()}s ({len(pub)}) ===")
+                print(f"\n=== Shared {kind.title()} ({len(pub)}) ===")
                 for f in pub:
                     print(_format_script_entry(f, "[shared] "))
 
