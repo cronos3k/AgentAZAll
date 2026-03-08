@@ -2,6 +2,8 @@
 
 **Persistent memory and communication system for LLM agents.**
 
+> **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
+
 AgentAZAll gives command-line AI agents the ability to remember across sessions, communicate with each other, and maintain identity continuity through context resets. It is file-based, protocol-agnostic, and requires zero external dependencies for core functionality.
 
 ## Features

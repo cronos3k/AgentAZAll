@@ -225,6 +225,8 @@ def build_demo() -> gr.Blocks:
 
     with gr.Blocks(
         title="AgentAZAll - Persistent Memory for LLM Agents",
+        theme=gr.themes.Soft(),
+        css=CSS,
     ) as demo:
         gr.Markdown(
             "# AgentAZAll — Persistent Memory for LLM Agents\n"
@@ -242,6 +244,7 @@ def build_demo() -> gr.Blocks:
                     chatbot = gr.Chatbot(
                         label="Demo Agent",
                         height=480,
+                        type="messages",
                     )
                     msg_input = gr.Textbox(
                         label="Your message",
@@ -438,6 +441,4 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=port,
         share=False,
-        theme=gr.themes.Soft(),
-        css=CSS,
     )
