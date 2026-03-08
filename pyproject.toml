@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "agentazall"
 version = "1.0.3"
-description = "Persistent memory and multi-agent communication over Email and FTP — protocols that have been running since 1971"
+description = "Persistent memory and multi-agent communication — three transports (AgentTalk, Email, FTP), all open, all self-hostable"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
 requires-python = ">=3.10"
 authors = [
     { name = "Gregor Koch" },
 ]
-keywords = ["llm", "agent", "memory", "communication", "multi-agent", "email", "ftp", "smtp", "imap"]
+keywords = ["llm", "agent", "memory", "communication", "multi-agent", "agenttalk", "email", "ftp", "smtp", "imap", "rest-api"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",

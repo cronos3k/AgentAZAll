@@ -148,7 +148,37 @@ footer { display: none !important; }
 HOW_IT_WORKS_MD = """\
 ## How AgentAZAll Works
 
-AgentAZAll is a **file-based persistent memory and communication system** for LLM agents.
+AgentAZAll is a **persistent memory and multi-agent communication system** for LLM agents
+with **three interchangeable transport layers**. Pick the one that fits your setup —
+from the agent's perspective, they're all identical.
+
+### Three Transports, One Interface
+
+| Transport | Protocol | Self-Host | Best For |
+|-----------|----------|-----------|----------|
+| **AgentTalk** | HTTPS REST API | `agentazall server --agenttalk` | Modern setups, zero config |
+| **Email** | SMTP + IMAP + POP3 | `agentazall server --email` | Universal compatibility |
+| **FTP** | FTP/FTPS | `agentazall server --ftp` | File-heavy workflows |
+
+All three are **open**, **self-hostable**, and **interchangeable**. Switch transports
+by changing one line in `config.json`.
+
+### Free Public Relay
+
+Don't want to run your own server? Register on the free public relay in seconds:
+
+```bash
+pip install agentazall
+agentazall register --agent myagent
+```
+
+The relay uses **AgentTalk** -- a privacy-first HTTPS protocol:
+- **Zero-knowledge**: server relays opaque blobs, can't read messages
+- **RAM-only**: messages stored in volatile memory, erased on reboot
+- **Ephemeral**: messages auto-delete on retrieval, expire after 48h
+
+### File-Based Storage
+
 Every agent gets a mailbox directory organized by date:
 
 ```
@@ -170,11 +200,11 @@ data/mailboxes/
 | Feature | Commands | Description |
 |---------|----------|-------------|
 | **Persistent Memory** | `remember`, `recall` | Store and search memories that survive context resets |
-| **Inter-Agent Messaging** | `send`, `inbox`, `reply` | Agents communicate via email-like messages |
+| **Inter-Agent Messaging** | `send`, `inbox`, `reply` | Agents communicate via any transport |
 | **Identity Continuity** | `whoami`, `doing` | Maintain identity and task state across sessions |
 | **Working Notes** | `note`, `notes` | Named notes for ongoing projects |
 | **Agent Directory** | `directory` | Discover other agents in the network |
-| **Daily Index** | `index` | Auto-generated summary of each day's activity |
+| **Skills & Tools** | `skill`, `tool` | Store and share reusable Python scripts |
 
 ### Integration with LLM Agents
 
@@ -195,32 +225,35 @@ agentazall doing --set "CURRENT: X. NEXT: Y."
 agentazall note handoff --set "detailed state for next session"
 ```
 
-### Install Locally
+### Install & Run
 
 ```bash
 pip install agentazall
+
+# Quick start with public relay:
+agentazall register --agent myagent
+
+# Or self-host everything:
 agentazall setup --agent my-agent@localhost
-agentazall remember --text "Hello world" --title "first-memory"
-agentazall recall
+agentazall server --agenttalk     # modern HTTPS API (port 8484)
+agentazall server --email         # SMTP/IMAP/POP3 (ports 2525/1143/1110)
+agentazall server --ftp           # FTP (port 2121)
+agentazall server --all           # all three at once
 ```
-
-### Why Email and FTP?
-
-Other agent frameworks invent proprietary sync protocols. AgentAZAll uses the ones that already won:
-- **FTP** (1971) -- every server on earth has it. Zero config file transfer.
-- **SMTP** (1982) -- universal message delivery across any network boundary.
-- **IMAP** (1986) -- persistent mailboxes. Agents check mail like humans do.
-- **POP3** (1988) -- simple retrieval, works on the smallest devices.
-
-Your agents inherit 50 years of infrastructure -- no new API, no vendor to depend on.
 
 ### Architecture
 
+```
+Agent <-> agentazall CLI <-> filesystem <-> Daemon <-> AgentTalk / Email / FTP servers
+Human <-> web_ui (Gradio) <-> agentazall CLI <-> filesystem
+```
+
 - **Zero external dependencies** for core (Python stdlib only)
 - **File-based storage** -- no database, fully portable
-- **Built-in email server** (SMTP + IMAP + POP3) for agent-to-agent communication
+- **AgentTalk server** -- modern HTTPS REST API, self-host or use public relay
+- **Email server** (SMTP + IMAP + POP3) for universal compatibility
 - **FTP transport** -- the original internet file protocol, still everywhere
-- **Gradio web UI** for human participants
+- **Unlimited local** -- self-hosted AgentTalk has no file size or message limits
 
 ### Links
 
@@ -239,9 +272,10 @@ def build_demo() -> gr.Blocks:
         css=CSS,
     ) as demo:
         gr.Markdown(
-            "# AgentAZAll — Persistent Memory for LLM Agents\n"
-            "Chat with an AI agent that actually *remembers*. "
-            "Powered by [SmolLM2-1.7B](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct) "
+            "# AgentAZAll — Persistent Memory & Multi-Agent Communication\n"
+            "Three transports (AgentTalk · Email · FTP), one interface. "
+            "Chat with an agent that *remembers* — powered by "
+            "[SmolLM2-1.7B](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct) "
             "on ZeroGPU."
         )
 

@@ -1,6 +1,6 @@
 # AgentAZAll
 
-**Persistent memory and multi-agent communication over Email and FTP — protocols that have been running since 1971.**
+**Persistent memory and multi-agent communication — three interchangeable transports (AgentTalk · Email · FTP), all open, all self-hostable.**
 
 > **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
 
