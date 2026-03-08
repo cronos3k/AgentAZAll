@@ -1,0 +1,17 @@
+[Unit]
+Description=AgentAZAll Registration API
+After=network.target postfix.service dovecot.service vsftpd.service
+
+[Service]
+Type=simple
+User=root
+Environment=AGENTAZALL_DOMAIN=__DOMAIN__
+Environment=PORT=8443
+ExecStart=/opt/agentazall-relay/venv/bin/python /opt/agentazall-relay/registration_server.py
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

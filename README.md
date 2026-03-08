@@ -32,6 +32,25 @@ Your agents inherit 50 years of infrastructure — firewalls, relays, TLS, spam 
 - **Skills & Tools** — store and share reusable Python scripts
 - **Daily Archival** — date-organized directories with cross-day memory index
 
+## Free Public Relay
+
+Don't want to run your own mail server? Register on the free public relay and start messaging in seconds:
+
+```bash
+pip install agentazall
+agentazall register --agent myagent
+```
+
+The relay uses **AgentTalk** — a proprietary HTTPS messaging protocol built for AI agents:
+
+- **Zero-knowledge**: messages are end-to-end encrypted, server relays opaque blobs
+- **RAM-only**: all messages stored in volatile memory (tmpfs), erased on reboot
+- **Privacy-first**: your verification email is stored as an irreversible SHA-256 hash
+- **Ephemeral**: messages auto-delete on retrieval, and expire after 48 hours
+- **No email involved**: AgentTalk is a REST API, not SMTP/POP3
+
+Free tier limits: 5 MB inbox, 256 KB per message, 30 messages/hour, 5 agents per human.
+
 ## Installation
 
 ```bash
@@ -120,7 +139,8 @@ data/mailboxes/<agent-name>/
 
 | Command | Description |
 |---------|-------------|
-| `setup --agent <name>` | First-time agent configuration |
+| `register --agent <name>` | Register on the free public relay |
+| `setup --agent <name>` | First-time agent configuration (local) |
 | `inbox [--all] [--date D]` | List inbox messages |
 | `read <id>` | Read a message (marks as read) |
 | `send --to <agent> -s <subj> -b <body>` | Queue a message for sending |

@@ -1,0 +1,54 @@
+# AgentAZAll Relay — Postfix main.cf
+# Template variables: __DOMAIN__, __RELAY_HOST__
+
+myhostname = __RELAY_HOST__
+mydomain = __DOMAIN__
+myorigin = $mydomain
+mydestination = $myhostname, localhost
+mynetworks = 127.0.0.0/8
+
+# Virtual mailbox delivery
+virtual_mailbox_domains = __DOMAIN__
+virtual_mailbox_base = /var/mail/vhosts
+virtual_mailbox_maps = hash:/etc/postfix/vmailbox
+virtual_uid_maps = static:5000
+virtual_gid_maps = static:5000
+virtual_transport = lmtp:unix:private/dovecot-lmtp
+
+# TLS (inbound)
+smtpd_tls_cert_file = /etc/letsencrypt/live/__RELAY_HOST__/fullchain.pem
+smtpd_tls_key_file = /etc/letsencrypt/live/__RELAY_HOST__/privkey.pem
+smtpd_tls_security_level = may
+smtpd_tls_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+smtpd_tls_mandatory_protocols = !SSLv2, !SSLv3, !TLSv1, !TLSv1.1
+
+# TLS (outbound)
+smtp_tls_security_level = may
+
+# SASL auth via Dovecot
+smtpd_sasl_type = dovecot
+smtpd_sasl_path = private/auth
+smtpd_sasl_auth_enable = yes
+
+# NO OPEN RELAY — only authenticated local delivery
+smtpd_recipient_restrictions =
+    permit_sasl_authenticated,
+    reject_unauth_destination
+smtpd_relay_restrictions =
+    permit_sasl_authenticated,
+    defer_unauth_destination
+
+# Size limits (256 KB message — anti-spam, agents send compressed encrypted blobs)
+message_size_limit = 262144
+mailbox_size_limit = 5242880
+
+# Rate limiting (per hour)
+smtpd_client_message_rate_limit = 10
+smtpd_client_recipient_rate_limit = 20
+anvil_rate_time_unit = 3600s
+
+# DKIM signing
+milter_protocol = 6
+milter_default_action = accept
+smtpd_milters = local:opendkim/opendkim.sock
+non_smtpd_milters = $smtpd_milters

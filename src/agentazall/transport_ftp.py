@@ -3,6 +3,7 @@
 import ftplib
 import logging
 import re
+import ssl
 from pathlib import Path
 from typing import List, Optional
 
@@ -13,7 +14,7 @@ log = logging.getLogger("agentazall")
 
 
 class FTPTransport:
-    """FTP-based transport."""
+    """FTP-based transport with optional FTPS (TLS) support."""
 
     def __init__(self, cfg: dict):
         self.cfg = cfg
@@ -21,9 +22,17 @@ class FTPTransport:
 
     def connect(self) -> Optional[ftplib.FTP]:
         try:
-            ftp = ftplib.FTP()
-            ftp.connect(self.fc["host"], self.fc["port"], timeout=30)
-            ftp.login(self.fc["user"], self.fc["password"])
+            if self.fc.get("ftp_ssl"):
+                ctx = ssl.create_default_context()
+                ftp = ftplib.FTP_TLS(context=ctx)
+                ftp.connect(self.fc["host"], self.fc["port"], timeout=30)
+                ftp.login(self.fc["user"], self.fc["password"])
+                ftp.prot_p()  # encrypt data channel
+                log.debug("FTP-TLS connected to %s:%s", self.fc["host"], self.fc["port"])
+            else:
+                ftp = ftplib.FTP()
+                ftp.connect(self.fc["host"], self.fc["port"], timeout=30)
+                ftp.login(self.fc["user"], self.fc["password"])
             return ftp
         except Exception as e:
             log.error("FTP connect: %s", e)

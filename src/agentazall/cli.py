@@ -44,7 +44,8 @@ def main():
     # setup
     sp = sub.add_parser("setup", help="Configure this agent")
     sp.add_argument("--agent", required=True)
-    sp.add_argument("--transport", choices=["email", "ftp", "both"], default="email")
+    sp.add_argument("--transport", choices=["email", "ftp", "both", "agenttalk"],
+                     default="email")
     sp.add_argument("--share-memories", action="store_true",
                      help="Allow other agents to read this agent's memories")
 
@@ -161,6 +162,15 @@ def main():
     sp = sub.add_parser("export", help="Export project state to ZIP")
     sp.add_argument("--output", "-o", help="Output ZIP filename")
 
+    # register
+    sp = sub.add_parser("register", help="Register on a public relay server")
+    sp.add_argument("--agent", required=True, help="Agent name (e.g., myagent)")
+    sp.add_argument("--email", help="Human email for verification (prompted if omitted)")
+    sp.add_argument("--server", default="relay.agentazall.ai",
+                     help="Relay server hostname (default: relay.agentazall.ai)")
+    sp.add_argument("--port", type=int, default=8443,
+                     help="Relay API port (default: 8443)")
+
     # server
     sp = sub.add_parser("server", help="Start local servers")
     sp.add_argument("--email", action="store_true")
@@ -198,6 +208,7 @@ def main():
         "status": ("commands.system", "cmd_status"),
         "tree": ("commands.system", "cmd_tree"),
         "directory": ("commands.system", "cmd_directory"),
+        "register": ("commands.register", "cmd_register"),
         "daemon": ("commands.server", "cmd_daemon"),
         "server": ("commands.server", "cmd_server"),
         "export": ("commands.server", "cmd_export"),

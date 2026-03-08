@@ -31,6 +31,7 @@ from .helpers import (
 )
 from .index import build_index, build_remember_index
 from .messages import parse_message
+from .transport_agenttalk import AgentTalkTransport
 from .transport_email import EmailTransport
 from .transport_ftp import FTPTransport
 
@@ -43,8 +44,10 @@ class Daemon:
         transport = cfg.get("transport", "email")
         self.use_email = transport in ("email", "both")
         self.use_ftp = transport in ("ftp", "both")
+        self.use_agenttalk = transport == "agenttalk"
         self.email = EmailTransport(cfg) if self.use_email else None
         self.ftp = FTPTransport(cfg) if self.use_ftp else None
+        self.agenttalk = AgentTalkTransport(cfg) if self.use_agenttalk else None
 
     def run(self, once=False):
         agent = self.cfg["agent_name"]
@@ -89,6 +92,10 @@ class Daemon:
             rx = self.ftp.fetch_inbox(self.cfg, seen)
             if rx:
                 save_seen(self.cfg, seen)
+                changed.add(today_str())
+        if self.use_agenttalk:
+            rx = self._agenttalk_receive()
+            if rx:
                 changed.add(today_str())
 
         # 3. Sync special folders
@@ -135,6 +142,13 @@ class Daemon:
                 # email transport
                 if self.use_email:
                     ok_email = self.email.send(
+                        to_list, cc_list, subject, body or "",
+                        agent, att_paths)
+
+                # agenttalk transport
+                ok_agenttalk = True
+                if self.use_agenttalk:
+                    ok_agenttalk = self.agenttalk.send(
                         to_list, cc_list, subject, body or "",
                         agent, att_paths)
 
@@ -186,7 +200,8 @@ class Daemon:
                             log.error("Local deliver %s -> %s: %s", mf.stem[:8], rcpt, e)
 
                 # Move to sent/ if at least one delivery method succeeded
-                if ok_email or ok_ftp or ok_local:
+                if ok_email or ok_ftp or ok_local or (
+                    self.use_agenttalk and ok_agenttalk):
                     sentd = mf.parent.parent / SENT
                     sentd.mkdir(exist_ok=True)
                     safe_move(str(mf), str(sentd / mf.name))
@@ -197,6 +212,7 @@ class Daemon:
                         shutil.move(str(att_dir), str(dest))
                     via = "+".join(filter(None, [
                         "email" if ok_email and self.use_email else "",
+                        "agenttalk" if ok_agenttalk and self.use_agenttalk else "",
                         "ftp" if ok_ftp and self.use_ftp else "",
                         "local" if ok_local else ""]))
                     log.info("Sent %s -> %s via %s",
@@ -255,6 +271,59 @@ class Daemon:
                 count += 1
             except Exception as e:
                 log.error("Email save uid=%s: %s", uid, e)
+        if count:
+            save_seen(self.cfg, seen)
+        return count
+
+    def _agenttalk_receive(self) -> int:
+        """Fetch messages from AgentTalk relay and save to local inbox."""
+        seen = load_seen(self.cfg)
+        msgs = self.agenttalk.receive(seen)
+        count = 0
+        for uid, headers, body, atts in msgs:
+            try:
+                ds = today_str()
+                # Try to parse timestamp from message
+                try:
+                    dt_str = headers.get("Date", "")
+                    if "T" in dt_str:  # ISO format from relay
+                        ds = dt_str[:10]
+                except Exception:
+                    pass
+
+                ensure_dirs(self.cfg, ds)
+                msg_id = headers.get("Message-ID", "") or generate_id(
+                    headers.get("From", ""), headers.get("To", ""),
+                    headers.get("Subject", ""))
+
+                lines = [
+                    f"From: {headers.get('From', '')}",
+                    f"To: {headers.get('To', '')}",
+                    f"Subject: {headers.get('Subject', '')}",
+                    f"Date: {headers.get('Date', '') or now_str()}",
+                    f"Message-ID: {msg_id}",
+                    "Status: new",
+                ]
+                if atts:
+                    lines.append(f"Attachments: {', '.join(n for n, _ in atts)}")
+                lines += ["", "---", body]
+
+                inbox_dir = agent_day(self.cfg, ds) / INBOX
+                fpath = inbox_dir / f"{msg_id}.txt"
+                fpath.write_text("\n".join(lines), encoding="utf-8")
+
+                if atts:
+                    adir = inbox_dir / msg_id
+                    adir.mkdir(exist_ok=True)
+                    for fname, data in atts:
+                        safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', fname)
+                        (adir / safe).write_bytes(data)
+
+                log.info("AgentTalk recv %s subj=%s",
+                         msg_id[:8], headers.get("Subject", "?"))
+                count += 1
+            except Exception as e:
+                log.error("AgentTalk save uid=%s: %s", uid, e)
         if count:
             save_seen(self.cfg, seen)
         return count

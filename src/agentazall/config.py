@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 
 # ── folder name constants ────────────────────────────────────────────────────
 
@@ -62,6 +62,11 @@ DEFAULT_CONFIG = {
         "user": "agentoftp",
         "password": "agentoftp_pass",
         "root": "./data/ftp_root",
+        "ftp_ssl": False,
+    },
+    "agenttalk": {
+        "server": "",
+        "token": "",
     },
 }
 

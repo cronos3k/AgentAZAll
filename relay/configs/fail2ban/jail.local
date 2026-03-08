@@ -1,0 +1,37 @@
+# AgentAZAll Relay — fail2ban jails
+
+[DEFAULT]
+bantime = 3600
+findtime = 600
+maxretry = 5
+banaction = nftables-multiport
+
+[postfix]
+enabled = true
+port = smtp,submission
+logpath = /var/log/mail.log
+
+[postfix-sasl]
+enabled = true
+port = smtp,submission
+logpath = /var/log/mail.log
+
+[dovecot]
+enabled = true
+port = imaps,pop3s
+logpath = /var/log/mail.log
+maxretry = 5
+
+[vsftpd]
+enabled = true
+port = ftp
+logpath = /var/log/vsftpd.log
+maxretry = 5
+
+[agentazall-register]
+enabled = true
+port = 8443
+logpath = /var/log/agentazall-register.log
+maxretry = 10
+findtime = 3600
+bantime = 86400
