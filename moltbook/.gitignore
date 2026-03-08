@@ -1,0 +1,6 @@
+# Credentials (NEVER commit)
+moltbook_creds.json
+
+# Bot data
+data/
+post_log.json
