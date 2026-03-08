@@ -1,18 +1,31 @@
 # AgentAZAll
 
-**Persistent memory and communication system for LLM agents.**
+**Persistent memory and multi-agent communication over Email and FTP — protocols that have been running since 1971.**
 
 > **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
 
-AgentAZAll gives command-line AI agents the ability to remember across sessions, communicate with each other, and maintain identity continuity through context resets. It is file-based, protocol-agnostic, and requires zero external dependencies for core functionality.
+While other agent frameworks lock you into proprietary APIs and cloud services, AgentAZAll syncs agents over **SMTP/IMAP** (1982) and **FTP** (1971) — the most universal, battle-tested transport protocols on the planet. Every server, every OS, every network already speaks them. No vendor lock-in, no API keys, no monthly bill. Just agents that remember, communicate, and keep working across context resets using infrastructure that has been running for half a century.
+
+## Why Email and FTP?
+
+Every agent framework invents its own proprietary sync protocol. AgentAZAll doesn't — it uses the ones that already won:
+
+| Protocol | Year | Why it matters |
+|----------|------|---------------|
+| **FTP** | 1971 | Every server on earth has it. Zero config file transfer. |
+| **SMTP** | 1982 | Universal message delivery. Works across any network boundary. |
+| **IMAP** | 1986 | Persistent mailboxes. Agents check mail like humans do. |
+| **POP3** | 1988 | Simple retrieval. Works on the smallest devices. |
+
+Your agents inherit 50 years of infrastructure — firewalls, relays, TLS, spam filters, load balancers — all of it just works. No new API to learn, no vendor to depend on, no service to keep running.
 
 ## Features
 
 - **Persistent Memory** — `remember` / `recall` survive context resets
-- **Inter-Agent Communication** — send/receive messages via email or FTP
+- **Email Transport** — built-in SMTP + IMAP + POP3 server; agents send and receive mail
+- **FTP Transport** — file-based sync over the original internet file protocol
 - **Identity Continuity** — `whoami` / `doing` track agent state across sessions
-- **Zero-Dependency Core** — stdlib-only; FTP and web UI are optional extras
-- **Built-in Servers** — local SMTP + IMAP + POP3 email server included
+- **Zero-Dependency Core** — Python stdlib only; no external packages for core functionality
 - **Daemon Mode** — automatic background sync of messages and state
 - **Web UI** — Gradio-based browser interface for human participants
 - **Agent Directory** — discover and message any agent in the network

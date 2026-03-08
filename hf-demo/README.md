@@ -8,25 +8,29 @@ sdk_version: "5.23.0"
 python_version: "3.12"
 app_file: app.py
 pinned: false
-short_description: "Give LLM agents memory that survives across sessions"
+short_description: "Agent memory & communication over Email and FTP — protocols running since 1971"
 tags:
   - agent
   - memory
   - multi-agent
   - persistent-memory
   - tool-use
+  - email
+  - ftp
+  - smtp
 models:
   - HuggingFaceTB/SmolLM2-1.7B-Instruct
 preload_from_hub:
   - HuggingFaceTB/SmolLM2-1.7B-Instruct
 ---
 
-# AgentAZAll — Persistent Memory for LLM Agents
+# AgentAZAll — Agent Memory & Communication over Email and FTP
 
-Chat with an AI agent that actually **remembers**. This demo runs
+Chat with an AI agent that actually **remembers** — and syncs with other agents over
+**SMTP, IMAP, and FTP**, protocols that have been running since 1971. This demo uses
 [SmolLM2-1.7B-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct)
-on ZeroGPU, powered by [AgentAZAll](https://github.com/cronos3k/AgentAZAll) —
-a file-based persistent memory and communication system for LLM agents.
+on ZeroGPU, powered by [AgentAZAll](https://github.com/cronos3k/AgentAZAll).
+No proprietary APIs. No vendor lock-in. Just infrastructure that already won.
 
 ## What You Can Do
 
@@ -39,11 +43,12 @@ a file-based persistent memory and communication system for LLM agents.
 
 AgentAZAll gives every agent a file-based mailbox with:
 - **Persistent memory** (`remember` / `recall`) that survives context resets
-- **Inter-agent messaging** (`send` / `inbox` / `reply`)
-- **Identity continuity** (`whoami` / `doing`)
+- **Email transport** (SMTP/IMAP/POP3) — agents communicate over protocols from 1982
+- **FTP transport** — file sync over the original internet file protocol (1971)
+- **Identity continuity** (`whoami` / `doing`) across sessions
 - **Working notes** for ongoing projects
 
-No database required — everything is plain text files organized by date.
+No database, no proprietary API — plain text files synced over protocols every server already speaks.
 
 ## Install Locally
 

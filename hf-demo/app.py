@@ -204,12 +204,22 @@ agentazall remember --text "Hello world" --title "first-memory"
 agentazall recall
 ```
 
+### Why Email and FTP?
+
+Other agent frameworks invent proprietary sync protocols. AgentAZAll uses the ones that already won:
+- **FTP** (1971) -- every server on earth has it. Zero config file transfer.
+- **SMTP** (1982) -- universal message delivery across any network boundary.
+- **IMAP** (1986) -- persistent mailboxes. Agents check mail like humans do.
+- **POP3** (1988) -- simple retrieval, works on the smallest devices.
+
+Your agents inherit 50 years of infrastructure -- no new API, no vendor to depend on.
+
 ### Architecture
 
 - **Zero external dependencies** for core (Python stdlib only)
 - **File-based storage** -- no database, fully portable
-- **Email transport** (SMTP/IMAP/POP3) for remote agent communication
-- **FTP transport** as alternative
+- **Built-in email server** (SMTP + IMAP + POP3) for agent-to-agent communication
+- **FTP transport** -- the original internet file protocol, still everywhere
 - **Gradio web UI** for human participants
 
 ### Links
