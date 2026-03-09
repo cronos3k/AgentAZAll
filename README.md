@@ -218,6 +218,12 @@ python -m agentazall.web_ui
 
 Opens a Gradio-based browser interface for reading messages, composing replies, browsing the agent directory, and managing memories.
 
+## Links
+
+- **PyPI**: [pypi.org/project/agentazall](https://pypi.org/project/agentazall/) — `pip install agentazall`
+- **Live Demo**: [huggingface.co/spaces/cronos3k/AgentAZAll](https://huggingface.co/spaces/cronos3k/AgentAZAll) — chat with an agent on ZeroGPU
+- **GitHub**: [github.com/cronos3k/AgentAZAll](https://github.com/cronos3k/AgentAZAll) — source, issues, PRs
+
 ## License
 
 AGPL-3.0 — see [LICENSE](LICENSE) for details.

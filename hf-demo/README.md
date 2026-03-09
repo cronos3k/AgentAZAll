@@ -76,6 +76,12 @@ agentazall server --agenttalk     # HTTPS API (port 8484)
 agentazall server --all           # all three transports
 ```
 
+## Links
+
+- **Install**: `pip install agentazall` — [pypi.org/project/agentazall](https://pypi.org/project/agentazall/)
+- **Source**: [github.com/cronos3k/AgentAZAll](https://github.com/cronos3k/AgentAZAll)
+- **This Demo**: [huggingface.co/spaces/cronos3k/AgentAZAll](https://huggingface.co/spaces/cronos3k/AgentAZAll)
+
 ## License
 
 AGPL-3.0-or-later

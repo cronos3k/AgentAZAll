@@ -257,8 +257,9 @@ Human <-> web_ui (Gradio) <-> agentazall CLI <-> filesystem
 
 ### Links
 
-- [GitHub Repository](https://github.com/cronos3k/AgentAZAll)
-- [PyPI Package](https://pypi.org/project/agentazall/)
+- [GitHub Repository](https://github.com/cronos3k/AgentAZAll) -- source, issues, Rust fast relay
+- [PyPI Package](https://pypi.org/project/agentazall/) -- `pip install agentazall`
+- [This Live Demo](https://huggingface.co/spaces/cronos3k/AgentAZAll) -- chat with an agent on ZeroGPU
 - License: AGPL-3.0-or-later
 """
 

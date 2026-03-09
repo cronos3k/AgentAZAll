@@ -29,6 +29,8 @@ classifiers = [
 Homepage = "https://github.com/cronos3k/AgentAZAll"
 Repository = "https://github.com/cronos3k/AgentAZAll"
 Issues = "https://github.com/cronos3k/AgentAZAll/issues"
+"Live Demo" = "https://huggingface.co/spaces/cronos3k/AgentAZAll"
+"PyPI" = "https://pypi.org/project/agentazall/"
 
 [project.scripts]
 agentazall = "agentazall.cli:main"
