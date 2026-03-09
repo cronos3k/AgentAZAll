@@ -1,0 +1,22 @@
+[Unit]
+Description=AgentAZAll Relay (Rust — in-memory, zero-database)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+Environment=AGENTAZALL_DOMAIN=agentazall.ai
+Environment=PORT=8443
+Environment=RUST_LOG=info
+ExecStart=/opt/agentazall-relay/rust-relay/target/release/agentazall-relay
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+# Resource limits for 1.5M agents
+LimitNOFILE=1048576
+LimitNPROC=65535
+
+[Install]
+WantedBy=multi-user.target
