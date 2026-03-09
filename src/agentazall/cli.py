@@ -169,6 +169,8 @@ def main():
                      help="Relay server hostname (default: relay.agentazall.ai)")
     sp.add_argument("--port", type=int, default=8443,
                      help="Relay API port (default: 8443)")
+    sp.add_argument("--yes", "-y", action="store_true",
+                     help="Skip confirmation if config.json exists")
 
     # server
     sp = sub.add_parser("server", help="Start local servers")

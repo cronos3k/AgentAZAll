@@ -73,11 +73,15 @@ def cmd_register(args):
     port = getattr(args, "port", None) or DEFAULT_PORT
 
     # Check if config already exists
+    force = getattr(args, "yes", False) or getattr(args, "force", False)
     config_path = Path.cwd() / "config.json"
-    if config_path.exists():
+    if config_path.exists() and not force:
         print(f"WARNING: {config_path} already exists.")
         print("  This will overwrite it with the relay config.")
-        resp = input("  Continue? [y/N] ").strip().lower()
+        try:
+            resp = input("  Continue? [y/N] ").strip().lower()
+        except EOFError:
+            resp = "y"  # non-interactive mode: proceed
         if resp != "y":
             print("Aborted.")
             return
