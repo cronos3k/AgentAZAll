@@ -37,11 +37,11 @@ def create_export(output=None, include_data=True):
         "config.json",
         "requirements.txt",
         "test_integration.py",
-        "CLAUDE.md",
+        "AGENT.md",
     ]
 
-    # directories to include
-    code_dirs = [".claude"]
+    # directories to include (agent config)
+    code_dirs = [".agent"]
     data_dirs = ["data", "logs"] if include_data else []
 
     count = 0

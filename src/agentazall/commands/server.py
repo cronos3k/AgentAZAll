@@ -37,7 +37,7 @@ def cmd_export(args):
     project_root = config_path.parent
 
     include_files = [
-        "config.json", "CLAUDE.md",
+        "config.json", "AGENT.md",
     ]
 
     count = 0
@@ -48,10 +48,10 @@ def cmd_export(args):
                 zf.write(str(fp), fname)
                 count += 1
 
-        # .claude directory
-        claude_dir = project_root / ".claude"
-        if claude_dir.exists():
-            for root, dirs, files in os.walk(str(claude_dir)):
+        # .agent directory (agent configuration)
+        agent_dir = project_root / ".agent"
+        if agent_dir.exists():
+            for root, dirs, files in os.walk(str(agent_dir)):
                 for f in files:
                     full = Path(root) / f
                     arcname = str(full.relative_to(project_root))

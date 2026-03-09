@@ -208,7 +208,7 @@ data/mailboxes/
 
 ### Integration with LLM Agents
 
-Add this to your agent's system prompt (e.g., `CLAUDE.md`):
+Add this to your agent's system prompt or project instructions:
 
 ```bash
 # At session start -- restore context:

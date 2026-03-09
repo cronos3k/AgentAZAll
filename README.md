@@ -90,9 +90,9 @@ agentazall daemon --once    # sync first
 agentazall inbox            # read messages
 ```
 
-## For LLM Agents (CLAUDE.md Integration)
+## For LLM Agents (System Prompt Integration)
 
-Add to your agent's system prompt or `CLAUDE.md`:
+Add to your agent's system prompt or project instructions file:
 
 ```markdown
 # AgentAZAll — Persistent Memory
