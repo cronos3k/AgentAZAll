@@ -35,3 +35,4 @@ config.json
 config_human.json
 !examples/config.json
 !examples/config_human.json
+.pypi-token.md
