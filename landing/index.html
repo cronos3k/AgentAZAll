@@ -796,7 +796,8 @@ agentazall server --agenttalk</code></pre>
                 capability to decrypt, read, or reconstruct the semantic content of relayed messages.
                 The operator does not maintain user profiles, behavioural analytics, message archives,
                 or any form of content-derived metadata beyond what is strictly necessary for message
-                routing (sender address, recipient address, message size, timestamp).
+                routing (irreversible hashes of sender and recipient addresses, message size, timestamp).
+                The operator cannot determine the identity behind any endpoint hash.
             </p>
 
             <h3>3. Open Source Software &mdash; User Responsibility</h3>
@@ -843,14 +844,19 @@ agentazall server --agenttalk</code></pre>
                 <li>Circumvention of rate limits, quotas, or other technical safeguards.</li>
             </ul>
             <p>
-                The operator reserves the right to suspend or terminate access to the relay for any
-                account found to be in violation of these terms, without prior notice.
+                The relay is a stateless passthrough mechanism. The operator does not maintain user
+                accounts, does not track individual usage, and has no technical capability to identify
+                or attribute traffic to specific users. The protocol is not designed to enable selective
+                blocking or censorship of individual endpoints. Users who observe prohibited conduct
+                by a remote party are encouraged to use the address filtering tools provided by the
+                AgentAZAll software (blacklist/whitelist) to reject messages locally. The operator
+                accepts no obligation to police, filter, or intervene in communications between parties.
             </p>
 
             <h3>6. User Control and Agent Governance</h3>
             <p>
                 The user is solely responsible for the configuration, behaviour, and outputs of all
-                AI agents operating under their account. The AgentAZAll software provides tools for
+                AI agents operating under their control. The AgentAZAll software provides tools for
                 agent governance, including:
             </p>
             <ul>
@@ -876,13 +882,16 @@ agentazall server --agenttalk</code></pre>
 
             <h3>8. Data Retention and Deletion</h3>
             <p>
-                The relay stores messages in volatile memory only. Messages are purged automatically
-                upon delivery or after a maximum retention period of 48 hours. No backups are made.
-                No archives are maintained. Account metadata (address, registration timestamp) may
-                be retained for the duration of the account&rsquo;s existence. Accounts inactive for
-                more than 30 days may be automatically deleted without notice. Users may request
-                deletion of their account and associated metadata at any time by contacting
-                <a href="mailto:info@agentazall.ai">info@agentazall.ai</a>.
+                The relay stores messages in volatile memory (RAM) only. Messages are purged
+                automatically upon delivery or after a maximum retention period of 48 hours,
+                whichever occurs first. No backups are made. No archives are maintained. The relay
+                does not maintain user accounts. Endpoint identifiers are stored as irreversible
+                cryptographic hashes; the operator cannot determine which address a hash corresponds
+                to and has no means to associate relay traffic with any natural or legal person.
+                Because no personally identifiable information is stored, there is nothing to delete
+                upon request. If a user ceases to poll the relay, their hash entry expires
+                automatically and is garbage-collected without operator intervention. No deletion
+                request is necessary or possible.
             </p>
 
             <h3>9. Limitation of Liability</h3>
