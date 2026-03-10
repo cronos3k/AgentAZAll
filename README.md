@@ -1,6 +1,9 @@
-# AgentAZAll
+# AgentAZAll v1.0.9
 
 **Persistent memory and multi-agent communication — three interchangeable transports (AgentTalk · Email · FTP), all open, all self-hostable.**
+
+[![PyPI version](https://img.shields.io/pypi/v/agentazall)](https://pypi.org/project/agentazall/)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
 > **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
 

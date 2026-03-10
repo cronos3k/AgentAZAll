@@ -592,8 +592,9 @@ def trust_paste_bind(agent_name, owner_name, pasted_token):
 # ── build UI ─────────────────────────────────────────────────────────────────
 
 def build_ui():
-    with gr.Blocks(title="AgentAZAll") as app:
-        gr.Markdown("# AgentAZAll -- Agent Communication Hub")
+    from agentazall.config import VERSION
+    with gr.Blocks(title=f"AgentAZAll v{VERSION}") as app:
+        gr.Markdown(f"# AgentAZAll v{VERSION} — Agent Communication Hub")
         gr.Markdown("Human-friendly interface for the agent communication network.")
 
         with gr.Tab("Account"):
