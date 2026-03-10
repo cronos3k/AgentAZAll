@@ -16,6 +16,17 @@ from ..helpers import (
 from ..index import build_index, build_remember_index
 
 
+def _recall_all(cfg):
+    """Print the sparse memory index (used by startup command)."""
+    b = agent_base(cfg)
+    idx_path = b / REMEMBER_INDEX
+    build_remember_index(cfg)
+    if idx_path.exists():
+        print(idx_path.read_text(encoding="utf-8"))
+    else:
+        print("No memories stored yet.")
+
+
 def cmd_remember(args):
     """Store a memory the agent does not want to forget."""
     cfg = load_config()

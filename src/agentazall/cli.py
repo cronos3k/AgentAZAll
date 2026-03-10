@@ -41,6 +41,14 @@ def main():
     p.add_argument("--verbose", "-v", action="store_true")
     sub = p.add_subparsers(dest="command")
 
+    # startup (restore context at session start — works with any LLM)
+    sub.add_parser("startup",
+                    help="Restore full context (identity + memories + inbox) — run at session start")
+
+    # prompt (output system-prompt snippet for any LLM)
+    sub.add_parser("prompt",
+                    help="Output a system-prompt snippet for any LLM agent")
+
     # quickstart (one-command full setup for autonomous agents)
     sp = sub.add_parser("quickstart", help="One-command full setup (for autonomous agents)")
     sp.add_argument("--agent", help="Agent name (auto-generated if omitted)")
@@ -229,6 +237,8 @@ def main():
 
     # Lazy imports for command dispatch
     dispatch = {
+        "startup": ("commands.startup", "cmd_startup"),
+        "prompt": ("commands.startup", "cmd_prompt"),
         "quickstart": ("commands.quickstart", "cmd_quickstart"),
         "setup": ("commands.setup", "cmd_setup"),
         "inbox": ("commands.messaging", "cmd_inbox"),

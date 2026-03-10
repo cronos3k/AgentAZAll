@@ -6,6 +6,18 @@ from ..helpers import agent_day, ensure_dirs, require_identity, today_str
 from ..index import build_index
 
 
+def _get_identity(cfg):
+    """Return identity string or empty string."""
+    text = find_latest_file(cfg, f"{WHO_AM_I}/identity.txt")
+    return text.strip() if text else ""
+
+
+def _get_doing(cfg):
+    """Return current task string or empty string."""
+    text = find_latest_file(cfg, f"{WHAT_AM_I_DOING}/tasks.txt")
+    return text.strip() if text else ""
+
+
 def cmd_whoami(args):
     cfg = load_config()
     if args.set:
