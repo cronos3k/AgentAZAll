@@ -371,6 +371,224 @@ def list_users():
     return "\n".join(lines)
 
 
+# ── trust binding ─────────────────────────────────────────────────────────────
+
+def _get_agents_for_trust() -> list:
+    """Return list of agents that can be bound."""
+    mb_root = SCRIPT_DIR / "data" / "mailboxes"
+    if not mb_root.exists():
+        return []
+    agents = []
+    for d in sorted(mb_root.iterdir()):
+        if d.is_dir() and not d.name.startswith("."):
+            key_file = d / ".agent_key"
+            if key_file.exists():
+                agents.append(d.name)
+    return agents
+
+
+def get_trust_overview():
+    """Get overview of all agents and their trust status."""
+    try:
+        from .trust import is_bound, get_trust_info
+    except ImportError:
+        return "Trust module not available."
+
+    mb_root = SCRIPT_DIR / "data" / "mailboxes"
+    if not mb_root.exists():
+        return "No agents found."
+
+    lines = ["=== Agent Trust Status ===", ""]
+    found = False
+    for d in sorted(mb_root.iterdir()):
+        if not d.is_dir() or d.name.startswith("."):
+            continue
+        key_file = d / ".agent_key"
+        if not key_file.exists():
+            continue
+        found = True
+        if is_bound(d):
+            info = get_trust_info(d)
+            owner = info.get("owner", "?")
+            since = info.get("bound_since", "?")
+            lines.append(f"  {d.name}")
+            lines.append(f"    Owner: {owner}")
+            lines.append(f"    Bound: {since}")
+            lines.append(f"    Status: ACTIVE")
+        else:
+            lines.append(f"  {d.name}")
+            lines.append(f"    Status: UNBOUND  (needs trust binding)")
+        lines.append("")
+
+    if not found:
+        return "No agents with keys found. Run 'agentazall setup' first."
+    return "\n".join(lines)
+
+
+def trust_generate_local(agent_name):
+    """Generate a trust token for local one-click binding.
+
+    This is the simple path: the web UI is on the same machine as the
+    agent data, so we can generate and apply the token directly.
+    """
+    if not agent_name or not agent_name.strip():
+        return "Select an agent first."
+
+    agent_name = agent_name.strip()
+
+    try:
+        from .trust import (
+            generate_trust_token, is_bound, get_trust_info,
+            write_pending_token,
+        )
+    except ImportError:
+        return "Trust module not available."
+
+    mb_root = SCRIPT_DIR / "data" / "mailboxes"
+    agent_dir = mb_root / agent_name
+
+    if not agent_dir.exists():
+        return f"Agent '{agent_name}' not found."
+
+    if is_bound(agent_dir):
+        info = get_trust_info(agent_dir)
+        owner = info.get("owner", "?")
+        return (
+            f"Agent '{agent_name}' is already bound to {owner}.\n"
+            f"Binding is permanent. To rebind, run on the server:\n"
+            f"  agentazall trust-revoke --yes"
+        )
+
+    key_file = agent_dir / ".agent_key"
+    if not key_file.exists():
+        return f"No .agent_key found for '{agent_name}'."
+
+    try:
+        data = json.loads(key_file.read_text(encoding="utf-8"))
+        agent_key = data.get("key", "")
+    except Exception as e:
+        return f"Cannot read agent key: {e}"
+
+    if not agent_key:
+        return "Agent key is empty."
+
+    try:
+        result = generate_trust_token(agent_name, agent_key)
+        write_pending_token(
+            agent_dir, result["token_ascii"],
+            result["owner_auth_secret"], result["expires_at"],
+        )
+        return (
+            f"Trust token generated for '{agent_name}'!\n\n"
+            f"Token expires in 10 minutes.\n"
+            f"Click 'Complete Binding' below to bind this agent to your account."
+        )
+    except Exception as e:
+        return f"Error generating token: {e}"
+
+
+def trust_complete_bind(agent_name, owner_name):
+    """Complete the trust binding using a locally generated pending token."""
+    if not agent_name or not agent_name.strip():
+        return "Select an agent first."
+    if not owner_name or not owner_name.strip():
+        return "Enter your username (the human account that will own this agent)."
+
+    agent_name = agent_name.strip()
+    owner_name = owner_name.strip()
+    if "@" not in owner_name:
+        owner_name = f"{owner_name}@localhost"
+
+    try:
+        from .trust import (
+            read_pending_token, clear_pending_token,
+            is_bound, attempt_bind,
+        )
+        from .config import load_config
+    except ImportError:
+        return "Trust module not available."
+
+    mb_root = SCRIPT_DIR / "data" / "mailboxes"
+    agent_dir = mb_root / agent_name
+
+    if not agent_dir.exists():
+        return f"Agent '{agent_name}' not found."
+
+    if is_bound(agent_dir):
+        return f"Agent is already bound."
+
+    # Read pending token
+    pending = read_pending_token(agent_dir)
+    if not pending:
+        return (
+            "No pending token found (expired or not generated).\n"
+            "Click 'Generate Trust Token' first."
+        )
+
+    token_ascii = pending.get("token", "")
+    if not token_ascii:
+        return "Pending token is empty."
+
+    # Build a minimal config for this agent
+    key_file = agent_dir / ".agent_key"
+    try:
+        data = json.loads(key_file.read_text(encoding="utf-8"))
+        agent_key = data.get("key", "")
+    except Exception:
+        return "Cannot read agent key."
+
+    cfg = {
+        "agent_name": agent_name,
+        "agent_key": agent_key,
+        "mailbox_dir": str(mb_root),
+    }
+
+    result = attempt_bind(cfg, token_ascii, owner_name)
+    clear_pending_token(agent_dir)
+
+    return result
+
+
+def trust_paste_bind(agent_name, owner_name, pasted_token):
+    """Bind using a manually pasted token (for remote/relay setups)."""
+    if not agent_name or not agent_name.strip():
+        return "Select an agent."
+    if not owner_name or not owner_name.strip():
+        return "Enter your username."
+    if not pasted_token or not pasted_token.strip():
+        return "Paste the trust token."
+
+    agent_name = agent_name.strip()
+    owner_name = owner_name.strip()
+    if "@" not in owner_name:
+        owner_name = f"{owner_name}@localhost"
+
+    try:
+        from .trust import attempt_bind
+    except ImportError:
+        return "Trust module not available."
+
+    mb_root = SCRIPT_DIR / "data" / "mailboxes"
+
+    key_file = mb_root / agent_name / ".agent_key"
+    if not key_file.exists():
+        return f"No agent key for '{agent_name}'."
+
+    try:
+        data = json.loads(key_file.read_text(encoding="utf-8"))
+        agent_key = data.get("key", "")
+    except Exception:
+        return "Cannot read agent key."
+
+    cfg = {
+        "agent_name": agent_name,
+        "agent_key": agent_key,
+        "mailbox_dir": str(mb_root),
+    }
+
+    return attempt_bind(cfg, pasted_token.strip(), owner_name)
+
+
 # ── build UI ─────────────────────────────────────────────────────────────────
 
 def build_ui():
@@ -410,6 +628,75 @@ def build_ui():
             switch_btn = gr.Button("Switch")
             switch_output = gr.Textbox(label="Result", lines=3, interactive=False)
             switch_btn.click(switch_user, [switch_name], switch_output)
+
+        with gr.Tab("Trust"):
+            gr.Markdown("### Agent Trust Binding")
+            gr.Markdown(
+                "Bind agents to your human account to prove ownership. "
+                "This creates a cryptographic link that cannot be faked or jailbroken."
+            )
+
+            trust_overview_btn = gr.Button("Check Trust Status", variant="primary")
+            trust_overview = gr.Textbox(label="Trust Overview", lines=12,
+                                         interactive=False)
+            trust_overview_btn.click(get_trust_overview, [], trust_overview)
+
+            gr.Markdown("---")
+            gr.Markdown("### Quick Bind (Local Installation)")
+            gr.Markdown(
+                "If this web UI is running on the **same machine** as your agents, "
+                "you can bind them in two clicks. No terminal needed!"
+            )
+
+            with gr.Row():
+                with gr.Column():
+                    trust_agent_select = gr.Dropdown(
+                        choices=_get_agents_for_trust(),
+                        label="Select Agent to Bind",
+                        interactive=True,
+                    )
+                    trust_gen_btn = gr.Button("Step 1: Generate Trust Token",
+                                               variant="primary")
+                    trust_gen_output = gr.Textbox(label="Status", lines=5,
+                                                   interactive=False)
+                    trust_gen_btn.click(trust_generate_local,
+                                         [trust_agent_select], trust_gen_output)
+
+                with gr.Column():
+                    trust_owner_name = gr.Textbox(
+                        label="Your Username",
+                        placeholder="e.g. gregor (your human account)",
+                    )
+                    trust_bind_btn = gr.Button("Step 2: Complete Binding",
+                                                variant="primary")
+                    trust_bind_output = gr.Textbox(label="Result", lines=8,
+                                                    interactive=False)
+                    trust_bind_btn.click(trust_complete_bind,
+                                          [trust_agent_select, trust_owner_name],
+                                          trust_bind_output)
+
+            gr.Markdown("---")
+            gr.Markdown("### Remote Bind (Paste Token)")
+            gr.Markdown(
+                "For agents on a **different machine**: run `agentazall trust-gen` "
+                "via SSH on that machine, then paste the token block here."
+            )
+            with gr.Row():
+                remote_agent = gr.Textbox(label="Agent Name",
+                                           placeholder="agent-x@localhost")
+                remote_owner = gr.Textbox(label="Your Username",
+                                           placeholder="gregor")
+            remote_token = gr.Textbox(
+                label="Paste Trust Token Here",
+                placeholder="Paste the entire ASCII block from trust-gen...",
+                lines=10,
+            )
+            remote_bind_btn = gr.Button("Verify & Bind", variant="primary")
+            remote_bind_output = gr.Textbox(label="Result", lines=8,
+                                             interactive=False)
+            remote_bind_btn.click(trust_paste_bind,
+                                   [remote_agent, remote_owner, remote_token],
+                                   remote_bind_output)
 
         with gr.Tab("Inbox"):
             with gr.Row():

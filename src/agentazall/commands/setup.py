@@ -11,11 +11,13 @@ from typing import List
 from ..config import DEFAULT_CONFIG, SKILLS, TOOLS, save_config
 from ..helpers import (
     agent_base,
+    agent_day,
     ensure_dirs,
     now_str,
     shared_dir,
+    today_str,
 )
-from ..index import build_index
+from ..index import build_index, build_remember_index
 
 
 def _list_existing_agents(mb_root: Path) -> List[str]:
@@ -38,8 +40,20 @@ def cmd_setup(args):
     mb_root = Path(cfg_tmp["mailbox_dir"])
     existing = _list_existing_agents(mb_root)
     if agent in existing:
-        print(f"Hey, '{agent}' is already here! That name is taken.")
-        print("Pick a different name. These are already registered:")
+        # Idempotent: if this agent is already the active one, just confirm
+        from ..config import load_config, resolve_config_path
+        try:
+            config_path = resolve_config_path()
+            if config_path.exists():
+                existing_cfg = load_config(config_path)
+                if existing_cfg.get("agent_name") == agent:
+                    print(f"Already configured as '{agent}'. Ready to use.")
+                    print(f"  Mailbox: {agent_base(existing_cfg)}")
+                    return
+        except Exception:
+            pass
+        print(f"Agent '{agent}' already exists. Pick a different name.")
+        print("Existing agents:")
         for e in sorted(existing):
             print(f"  - {e}")
         sys.exit(1)

@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.7"
+VERSION = "1.0.9"
 
 # ── folder name constants ────────────────────────────────────────────────────
 
@@ -113,15 +113,87 @@ def _resolve_relative_paths(cfg: dict, config_dir: Path):
             cfg["ftp"]["root"] = str((config_dir / root).resolve())
 
 
+def _auto_bootstrap(config_path: Path) -> dict:
+    """Auto-create config for headless/autonomous agents.
+
+    When no config.json exists, instead of crashing with an error,
+    automatically set up a new agent with a random name. This makes
+    agentazall work out-of-the-box for any agent that just does
+    ``pip install agentazall`` and starts using commands.
+    """
+    import hashlib
+    import time
+    from datetime import datetime
+
+    agent_name = f"agent-{os.urandom(4).hex()}@localhost"
+    agent_key = hashlib.sha256(
+        f"{agent_name}:{os.urandom(32).hex()}:{time.time()}".encode()
+    ).hexdigest()[:32]
+
+    cfg = dict(DEFAULT_CONFIG)
+    cfg["agent_name"] = agent_name
+    cfg["agent_key"] = agent_key
+
+    # Save config first
+    save_config(cfg, config_path)
+
+    # Resolve paths for directory creation
+    _resolve_relative_paths(cfg, config_path.parent.resolve())
+    cfg["_config_path"] = str(config_path.resolve())
+
+    # Lazy imports to avoid circular dependency
+    from .helpers import ensure_dirs, agent_base, agent_day, today_str
+    from .index import build_index, build_remember_index
+
+    ensure_dirs(cfg)
+
+    # Store agent key (for identity verification on write ops)
+    base = agent_base(cfg)
+    key_file = base / ".agent_key"
+    key_file.write_text(json.dumps({
+        "agent": agent_name,
+        "key": agent_key,
+        "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "allow_memory_sharing": False,
+    }, indent=2), encoding="utf-8")
+
+    # Set a default identity so `remember` works immediately
+    d = today_str()
+    id_dir = agent_day(cfg, d) / WHO_AM_I
+    id_dir.mkdir(parents=True, exist_ok=True)
+    (id_dir / "identity.txt").write_text(
+        f"I am {agent_name}, an autonomous AI agent. "
+        f"Use 'agentazall whoami --set' to customize this identity.",
+        encoding="utf-8"
+    )
+
+    build_index(cfg, d)
+    build_remember_index(cfg)
+
+    print(f"Welcome! Auto-configured as: {agent_name}")
+    print(f"  Config:  {config_path}")
+    print(f"  Mailbox: {base}")
+    print()
+    print("You're ready to go. Try:")
+    print("  agentazall remember --text 'my first memory' --title 'hello'")
+    print("  agentazall recall")
+    print("  agentazall whoami --set 'I am <your purpose>'")
+    print()
+
+    return cfg
+
+
 def load_config(config_path: Path = None) -> dict:
-    """Load and merge config, resolving relative paths."""
+    """Load and merge config, resolving relative paths.
+
+    If no config exists, auto-bootstraps a new agent so that
+    ``pip install agentazall && agentazall recall`` just works.
+    """
     if config_path is None:
         config_path = resolve_config_path()
     config_path = Path(config_path)
     if not config_path.exists():
-        print(f"ERROR: No config at {config_path}")
-        print("Run:  agentazall setup --agent <name>")
-        sys.exit(1)
+        return _auto_bootstrap(config_path)
     with open(config_path, encoding="utf-8") as f:
         user = json.load(f)
     cfg = _deep_merge(DEFAULT_CONFIG, user)

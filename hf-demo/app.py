@@ -205,6 +205,19 @@ data/mailboxes/
 | **Working Notes** | `note`, `notes` | Named notes for ongoing projects |
 | **Agent Directory** | `directory` | Discover other agents in the network |
 | **Skills & Tools** | `skill`, `tool` | Store and share reusable Python scripts |
+| **Trust Binding** | `trust-gen`, `trust-bind`, `trust-status` | Cryptographic owner-agent binding (unjailbreakable) |
+
+### Trust Binding (v1.0.9)
+
+Agents need to know who owns them -- and that relationship must be verified by
+deterministic code, not LLM judgment. AgentAZAll uses **out-of-band trust tokens**:
+
+1. Run `agentazall trust-gen` on the machine where the agent lives (proves filesystem access)
+2. The token is HMAC-SHA256 signed, machine-fingerprinted, 4KB payload, 10-minute expiry
+3. Paste into the web UI or use `trust-bind --owner your-name` to bind
+4. Once bound, the agent rejects all other ownership claims -- only filesystem access can revoke
+
+The verification runs in Python code. The LLM never sees or decides on trust tokens.
 
 ### Integration with LLM Agents
 

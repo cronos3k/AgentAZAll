@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgentAZAll — Persistent Memory &amp; Communication for AI Agents</title>
+    <meta name="description" content="Open-source infrastructure for AI agent persistent memory and multi-agent communication. Three interchangeable transports. Zero dependencies. Self-hostable.">
+
+    <!-- OG / Social -->
+    <meta property="og:title" content="AgentAZAll — Infrastructure for AI Agent Communication">
+    <meta property="og:description" content="Persistent memory and multi-agent messaging over HTTPS, Email, and FTP. Open source. Self-hostable. Zero dependencies.">
+    <meta property="og:image" content="https://agentazall.ai/assets/og-image.png">
+    <meta property="og:url" content="https://agentazall.ai">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Fonts: Crimson Pro (serif, the "serious engineering journal" feel) + JetBrains Mono (code) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HEADER — minimal, no hamburger menu, no logo animation bullshit  -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<header>
+    <nav>
+        <span class="wordmark">AgentAZAll</span>
+        <div class="nav-links">
+            <a href="https://github.com/cronos3k/AgentAZAll">GitHub</a>
+            <a href="https://pypi.org/project/agentazall/">PyPI</a>
+            <a href="https://github.com/cronos3k/AgentAZAll/blob/main/README.md">Docs</a>
+            <a href="https://relay.agentazall.ai/status" class="nav-status">Relay Status</a>
+        </div>
+    </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HERO — the pigeon, one sentence, two actions                     -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1>Infrastructure for<br>AI Agent Communication</h1>
+            <p class="hero-sub">
+                Persistent memory and multi-agent messaging over three
+                interchangeable protocols. Open source. Self-hostable.
+                Zero external dependencies.
+            </p>
+            <div class="hero-actions">
+                <code class="install-cmd">pip install agentazall</code>
+                <a href="https://github.com/cronos3k/AgentAZAll" class="btn-primary">View on GitHub</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <picture>
+                <source srcset="assets/hero-pigeon.webp" type="image/webp">
+                <img src="assets/hero-pigeon.png" alt="Carrier pigeon — natural history engraving dissolving into network routing diagram" width="1920" height="1071" loading="eager">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- NUMBERS — the "oh shit" section for investors                    -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="metrics">
+    <div class="metrics-grid">
+        <div class="metric">
+            <span class="metric-value">100,000+</span>
+            <span class="metric-label">messages / second</span>
+            <span class="metric-detail">Rust relay, single machine</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">3</span>
+            <span class="metric-label">interchangeable transports</span>
+            <span class="metric-detail">HTTPS (2026) &middot; Email (1982) &middot; FTP (1971)</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">0</span>
+            <span class="metric-label">external dependencies</span>
+            <span class="metric-detail">Python stdlib only. No Redis. No Postgres. No Docker.</span>
+        </div>
+        <div class="metric">
+            <span class="metric-value">2.3 MB</span>
+            <span class="metric-label">relay binary</span>
+            <span class="metric-detail">Rust + axum + tokio. Handles 1.5M agents.</span>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- THESIS — one paragraph that says everything                      -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="thesis">
+    <div class="thesis-content">
+        <p>
+            Every agent framework gives you tool use and chain-of-thought.
+            None of them solve the two fundamental problems: agents forget
+            everything when their context window resets, and they cannot
+            communicate with each other without bespoke orchestration glue.
+        </p>
+        <p>
+            AgentAZAll is infrastructure-layer software that gives AI agents
+            persistent memory and inter-agent communication over protocols that
+            have existed for decades. We did not invent a new protocol. We built
+            a unified interface over three that already work — and will continue
+            to work regardless of which AI framework wins.
+        </p>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HOW IT WORKS — flow diagrams that show the "why didn't anyone     -->
+<!-- else do this?" architecture. Inline SVGs for crisp rendering.     -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="diagrams">
+    <h2>How It Works</h2>
+    <p class="section-sub">Four design decisions. Each one obvious in hindsight.</p>
+
+    <!-- ── DIAGRAM 1: Transport Abstraction ──────────────────────── -->
+    <div class="diagram-row">
+        <div class="diagram-text">
+            <h3>One Interface, Three Protocols</h3>
+            <p>
+                Your agent calls <code>send()</code>. The transport layer decides
+                whether that message travels over HTTPS, SMTP, or FTP. Switch
+                transports by changing one config line. The agent code is identical.
+            </p>
+            <p class="diagram-insight">
+                If one protocol fails, fall back to another. No code changes.
+                No redeployment. The message gets through.
+            </p>
+        </div>
+        <div class="diagram-svg">
+            <svg viewBox="0 0 580 280" xmlns="http://www.w3.org/2000/svg">
+                <!-- Agent box -->
+                <rect x="10" y="110" width="100" height="50" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="60" y="140" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="11" fill="#1a1a18">Agent A</text>
+
+                <!-- Arrow to interface -->
+                <line x1="110" y1="135" x2="170" y2="135" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="170,135 164,131 164,139" fill="#1a1a18"/>
+                <text x="140" y="125" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#8a8a84">send()</text>
+
+                <!-- Unified interface box -->
+                <rect x="170" y="95" width="120" height="80" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.5"/>
+                <text x="230" y="125" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#1a1a18">Transport</text>
+                <text x="230" y="140" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#1a1a18">Layer</text>
+                <line x1="185" y1="150" x2="275" y2="150" stroke="#d4d4ce" stroke-width="0.8"/>
+                <text x="230" y="165" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">config: 1 line</text>
+
+                <!-- Three protocol branches -->
+                <!-- AgentTalk -->
+                <line x1="290" y1="110" x2="370" y2="45" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="370,45 363,44 365,51" fill="#1a1a18"/>
+                <rect x="370" y="22" width="110" height="36" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="425" y="37" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">AgentTalk</text>
+                <text x="425" y="50" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">HTTPS · 2026</text>
+
+                <!-- Email -->
+                <line x1="290" y1="135" x2="370" y2="135" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="370,135 364,131 364,139" fill="#1a1a18"/>
+                <rect x="370" y="112" width="110" height="36" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="425" y="127" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">Email</text>
+                <text x="425" y="140" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">SMTP/IMAP · 1982</text>
+
+                <!-- FTP -->
+                <line x1="290" y1="160" x2="370" y2="225" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="370,225 363,220 366,227" fill="#1a1a18"/>
+                <rect x="370" y="207" width="110" height="36" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="425" y="222" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">FTP</text>
+                <text x="425" y="235" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">RFC 959 · 1971</text>
+
+                <!-- Converge arrows to Agent B -->
+                <line x1="480" y1="40" x2="492" y2="100" stroke="#8a8a84" stroke-width="0.8" stroke-dasharray="4,3"/>
+                <line x1="480" y1="130" x2="492" y2="115" stroke="#8a8a84" stroke-width="0.8" stroke-dasharray="4,3"/>
+                <line x1="480" y1="225" x2="492" y2="130" stroke="#8a8a84" stroke-width="0.8" stroke-dasharray="4,3"/>
+
+                <!-- Agent B indicator -->
+                <text x="500" y="120" text-anchor="start" font-family="'JetBrains Mono',monospace" font-size="9" fill="#8a8a84">→ Agent B</text>
+
+                <!-- "identical message" annotation -->
+                <text x="500" y="55" text-anchor="start" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">same</text>
+                <text x="500" y="145" text-anchor="start" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">message</text>
+                <text x="500" y="235" text-anchor="start" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">arrives</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ── DIAGRAM 2: Memory Architecture ────────────────────────── -->
+    <div class="diagram-row diagram-row-reverse">
+        <div class="diagram-text">
+            <h3>Memory Without the Complexity</h3>
+            <p>
+                Every other system wants you to run a vector database, compute
+                embeddings, manage a retrieval pipeline. We store plain text files
+                in date-organized directories with a cross-day search index.
+            </p>
+            <p class="diagram-insight">
+                Your agent's memories are files you can <code>cat</code>,
+                <code>grep</code>, and back up with <code>rsync</code>.
+                There is no simpler persistent storage that works.
+            </p>
+        </div>
+        <div class="diagram-svg">
+            <svg viewBox="0 0 460 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- remember() call -->
+                <rect x="10" y="20" width="130" height="36" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="75" y="42" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#1a1a18">remember(text)</text>
+
+                <!-- Arrow down -->
+                <line x1="75" y1="56" x2="75" y2="80" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="75,80 71,74 79,74" fill="#1a1a18"/>
+
+                <!-- Date router -->
+                <rect x="25" y="80" width="100" height="30" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="75" y="100" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">date → dir</text>
+
+                <!-- File tree -->
+                <line x1="75" y1="110" x2="75" y2="135" stroke="#1a1a18" stroke-width="1"/>
+
+                <!-- memory/ root -->
+                <text x="30" y="148" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">memory/</text>
+
+                <!-- Date dirs -->
+                <line x1="40" y1="155" x2="40" y2="258" stroke="#d4d4ce" stroke-width="0.8"/>
+
+                <line x1="40" y1="168" x2="55" y2="168" stroke="#d4d4ce" stroke-width="0.8"/>
+                <text x="58" y="172" font-family="'JetBrains Mono',monospace" font-size="8.5" fill="#1a1a18">2026-03-07/</text>
+                <text x="80" y="186" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">cuda-oom-fix.md</text>
+                <text x="80" y="198" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">api-design-note.md</text>
+
+                <line x1="40" y1="212" x2="55" y2="212" stroke="#d4d4ce" stroke-width="0.8"/>
+                <text x="58" y="216" font-family="'JetBrains Mono',monospace" font-size="8.5" fill="#1a1a18">2026-03-08/</text>
+                <text x="80" y="230" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">deploy-checklist.md</text>
+
+                <line x1="40" y1="244" x2="55" y2="244" stroke="#d4d4ce" stroke-width="0.8"/>
+                <text x="58" y="248" font-family="'JetBrains Mono',monospace" font-size="8.5" fill="#1a1a18">2026-03-09/</text>
+                <text x="80" y="262" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">tls-setup.md</text>
+
+                <!-- Cross-day index -->
+                <line x1="195" y1="155" x2="195" y2="265" stroke="#1a1a18" stroke-width="0.8" stroke-dasharray="3,2"/>
+                <text x="198" y="148" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">index</text>
+
+                <!-- Index arrows pointing to files -->
+                <line x1="195" y1="186" x2="165" y2="186" stroke="#8a8a84" stroke-width="0.6" stroke-dasharray="2,2"/>
+                <line x1="195" y1="230" x2="165" y2="230" stroke="#8a8a84" stroke-width="0.6" stroke-dasharray="2,2"/>
+                <line x1="195" y1="262" x2="165" y2="262" stroke="#8a8a84" stroke-width="0.6" stroke-dasharray="2,2"/>
+
+                <!-- recall() on the right -->
+                <rect x="260" y="20" width="130" height="36" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="325" y="42" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#1a1a18">recall(query)</text>
+
+                <!-- Arrow from recall to index -->
+                <line x1="325" y1="56" x2="325" y2="90" stroke="#1a1a18" stroke-width="1"/>
+                <line x1="325" y1="90" x2="210" y2="155" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="210,155 215,147 218,154" fill="#1a1a18"/>
+
+                <!-- Search result arrow -->
+                <line x1="210" y1="200" x2="325" y2="200" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="325,200 319,196 319,204" fill="#1a1a18"/>
+
+                <!-- Result box -->
+                <rect x="260" y="185" width="180" height="70" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="270" y="202" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">2026-03-07 · cuda-oom-fix</text>
+                <line x1="270" y1="208" x2="430" y2="208" stroke="#d4d4ce" stroke-width="0.5"/>
+                <text x="270" y="222" font-family="'Crimson Pro',serif" font-size="9.5" fill="#1a1a18">CUDA OOM fix: add</text>
+                <text x="270" y="235" font-family="'Crimson Pro',serif" font-size="9.5" fill="#1a1a18">COLLATE utf8mb4 to</text>
+                <text x="270" y="248" font-family="'Crimson Pro',serif" font-size="9.5" fill="#1a1a18">customer_name column</text>
+
+                <!-- "just files" annotation -->
+                <text x="280" y="285" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">Plain text. That is all.</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ── DIAGRAM 3: Relay Architecture ─────────────────────────── -->
+    <div class="diagram-row">
+        <div class="diagram-text">
+            <h3>The Zero-Database Relay</h3>
+            <p>
+                Messages live in RAM. Accounts persist via periodic JSON snapshots.
+                There is no database. There has never been a database. The relay is
+                a 2.3&nbsp;MB Rust binary that handles 100K+ messages per second on
+                a single machine.
+            </p>
+            <p class="diagram-insight">
+                When the server reboots, messages are gone — by design.
+                You were supposed to read them. Accounts survive via snapshot.
+            </p>
+        </div>
+        <div class="diagram-svg">
+            <svg viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg">
+                <!-- Agent A -->
+                <rect x="10" y="55" width="80" height="40" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="50" y="79" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#1a1a18">Agent A</text>
+
+                <!-- POST /send arrow -->
+                <line x1="90" y1="75" x2="160" y2="75" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="160,75 154,71 154,79" fill="#1a1a18"/>
+                <text x="125" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">POST /send</text>
+
+                <!-- Relay server box (larger, shows internals) -->
+                <rect x="160" y="15" width="200" height="230" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.5"/>
+                <text x="260" y="35" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="10" fill="#1a1a18">Rust Relay</text>
+                <line x1="175" y1="42" x2="345" y2="42" stroke="#d4d4ce" stroke-width="0.8"/>
+
+                <!-- Auth -->
+                <rect x="180" y="52" width="160" height="28" rx="1" fill="none" stroke="#1a1a18" stroke-width="0.8"/>
+                <text x="260" y="70" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">Token Auth (DashMap O(1))</text>
+
+                <!-- Arrow down -->
+                <line x1="260" y1="80" x2="260" y2="95" stroke="#1a1a18" stroke-width="0.8"/>
+                <polygon points="260,95 257,90 263,90" fill="#1a1a18"/>
+
+                <!-- Throttle check -->
+                <rect x="180" y="95" width="160" height="28" rx="1" fill="none" stroke="#1a1a18" stroke-width="0.8"/>
+                <text x="260" y="113" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">Adaptive Throttle Check</text>
+
+                <!-- Arrow down -->
+                <line x1="260" y1="123" x2="260" y2="138" stroke="#1a1a18" stroke-width="0.8"/>
+                <polygon points="260,138 257,133 263,133" fill="#1a1a18"/>
+
+                <!-- Message write (RAM) -->
+                <rect x="180" y="138" width="160" height="28" rx="1" fill="none" stroke="#1a1a18" stroke-width="0.8"/>
+                <text x="260" y="156" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">Write → tmpfs inbox</text>
+
+                <!-- Arrow down -->
+                <line x1="260" y1="166" x2="260" y2="181" stroke="#1a1a18" stroke-width="0.8"/>
+                <polygon points="260,181 257,176 263,176" fill="#1a1a18"/>
+
+                <!-- 200 OK -->
+                <rect x="210" y="181" width="100" height="24" rx="1" fill="none" stroke="#1a1a18" stroke-width="0.8"/>
+                <text x="260" y="197" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">200 OK</text>
+
+                <!-- Snapshot annotation -->
+                <text x="260" y="225" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#8a8a84">snapshot every 60s → JSON</text>
+                <text x="260" y="237" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7" fill="#8a8a84">no database. ever.</text>
+
+                <!-- Agent B on right -->
+                <rect x="430" y="55" width="80" height="40" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="470" y="79" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9.5" fill="#1a1a18">Agent B</text>
+
+                <!-- GET /messages arrow -->
+                <line x1="360" y1="75" x2="430" y2="75" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="430,75 424,71 424,79" fill="#1a1a18"/>
+                <text x="395" y="67" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">GET /messages</text>
+
+                <!-- Messages flow to B (dashed = async) -->
+                <line x1="430" y1="95" x2="370" y2="155" stroke="#8a8a84" stroke-width="0.8" stroke-dasharray="4,3"/>
+                <text x="415" y="130" font-family="'Crimson Pro',serif" font-size="8.5" fill="#8a8a84" font-style="italic" transform="rotate(-35,415,130)">read + delete</text>
+
+                <!-- Reboot annotation -->
+                <text x="470" y="140" text-anchor="middle" font-family="'Crimson Pro',serif" font-size="9" fill="#8a8a84" font-style="italic">Messages purge</text>
+                <text x="470" y="153" text-anchor="middle" font-family="'Crimson Pro',serif" font-size="9" fill="#8a8a84" font-style="italic">on retrieval.</text>
+                <text x="470" y="166" text-anchor="middle" font-family="'Crimson Pro',serif" font-size="9" fill="#8a8a84" font-style="italic">48h TTL max.</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- ── DIAGRAM 4: Address Space ──────────────────────────────── -->
+    <div class="diagram-row diagram-row-reverse">
+        <div class="diagram-text">
+            <h3>Addresses You Cannot Guess</h3>
+            <p>
+                Every agent gets an ICQ-style address: their chosen name plus a
+                SHA-256 digest. Two agents can both be <code>alice</code> — they
+                get different addresses. You share your address with agents you
+                trust. There is no directory. No enumeration.
+            </p>
+            <p class="diagram-insight">
+                Nobody can find you unless you give them your address.
+                Nobody can enumerate agents. Nobody can scrape the network.
+            </p>
+        </div>
+        <div class="diagram-svg">
+            <svg viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+                <!-- Input components -->
+                <rect x="10" y="30" width="90" height="30" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="55" y="49" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">name</text>
+
+                <rect x="10" y="72" width="90" height="30" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="55" y="91" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">date</text>
+
+                <rect x="10" y="114" width="90" height="30" rx="2" fill="none" stroke="#1a1a18" stroke-width="1"/>
+                <text x="55" y="133" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">counter</text>
+
+                <!-- Arrows to SHA-256 -->
+                <line x1="100" y1="45" x2="140" y2="78" stroke="#1a1a18" stroke-width="0.8"/>
+                <line x1="100" y1="87" x2="140" y2="85" stroke="#1a1a18" stroke-width="0.8"/>
+                <line x1="100" y1="129" x2="140" y2="92" stroke="#1a1a18" stroke-width="0.8"/>
+
+                <!-- SHA-256 box -->
+                <rect x="140" y="62" width="110" height="44" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.2"/>
+                <text x="195" y="82" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="9" fill="#1a1a18">SHA-256</text>
+                <text x="195" y="98" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="7.5" fill="#8a8a84">first 16 hex chars</text>
+
+                <!-- Arrow to result -->
+                <line x1="250" y1="84" x2="290" y2="84" stroke="#1a1a18" stroke-width="1"/>
+                <polygon points="290,84 284,80 284,88" fill="#1a1a18"/>
+
+                <!-- Result address -->
+                <rect x="290" y="62" width="180" height="44" rx="2" fill="none" stroke="#1a1a18" stroke-width="1.5"/>
+                <text x="380" y="80" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8.5" fill="#1a1a18">alice.a3f2b7c8d9e1f0a2</text>
+                <text x="380" y="98" text-anchor="middle" font-family="'JetBrains Mono',monospace" font-size="8.5" fill="#8a8a84">.agenttalk</text>
+
+                <!-- Two alice example -->
+                <line x1="380" y1="106" x2="380" y2="130" stroke="#d4d4ce" stroke-width="0.8"/>
+
+                <text x="200" y="148" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">alice</text>
+                <text x="252" y="148" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">→</text>
+                <text x="268" y="148" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">alice.a3f2b7c8d9e1f0a2</text>
+
+                <text x="200" y="166" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">alice</text>
+                <text x="252" y="166" font-family="'JetBrains Mono',monospace" font-size="8" fill="#8a8a84">→</text>
+                <text x="268" y="166" font-family="'JetBrains Mono',monospace" font-size="8" fill="#1a1a18">alice.f33b9db62be8b49b</text>
+
+                <!-- Annotation -->
+                <text x="200" y="196" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">Same name, different agents, different addresses.</text>
+                <text x="200" y="212" font-family="'Crimson Pro',serif" font-size="10" fill="#8a8a84" font-style="italic">Knowing the name reveals nothing.</text>
+            </svg>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- ARCHITECTURE — the three transports, shown with gravitas          -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="architecture">
+    <h2>Three Transports, One Interface</h2>
+    <p class="section-sub">Switch by changing one configuration line. Your agent does not notice.</p>
+
+    <div class="transports">
+        <div class="transport">
+            <div class="transport-header">
+                <span class="transport-year">2026</span>
+                <h3>AgentTalk</h3>
+            </div>
+            <p class="transport-proto">HTTPS REST API</p>
+            <ul>
+                <li>Free public relay at relay.agentazall.ai</li>
+                <li>Adaptive throttling — no rate limits under 75% load</li>
+                <li>Zero-knowledge: encrypted blobs, we cannot read messages</li>
+                <li>ICQ-style addressing: <code>name.hexdigest.agenttalk</code></li>
+            </ul>
+            <!-- Replace with three herons hybrid image -->
+            <picture>
+                <source srcset="assets/transport-agenttalk.webp" type="image/webp">
+                <img src="assets/transport-agenttalk.png" alt="Modern API transport" class="transport-img" width="1024" height="1024" loading="lazy">
+            </picture>
+        </div>
+
+        <div class="transport">
+            <div class="transport-header">
+                <span class="transport-year">1982</span>
+                <h3>Email</h3>
+            </div>
+            <p class="transport-proto">SMTP + IMAP + POP3</p>
+            <ul>
+                <li>Works with any mail server on Earth</li>
+                <li>Your existing infrastructure, zero changes</li>
+                <li>Built-in mail server included for self-hosting</li>
+                <li>44 years of battle-tested reliability</li>
+            </ul>
+            <picture>
+                <source srcset="assets/transport-email.webp" type="image/webp">
+                <img src="assets/transport-email.png" alt="Email transport" class="transport-img" width="1024" height="1024" loading="lazy">
+            </picture>
+        </div>
+
+        <div class="transport">
+            <div class="transport-header">
+                <span class="transport-year">1971</span>
+                <h3>FTP</h3>
+            </div>
+            <p class="transport-proto">File Transfer Protocol</p>
+            <ul>
+                <li>Move actual files between agents, not just messages</li>
+                <li>Datasets, training artifacts, logs — any size</li>
+                <li>Built-in FTP server for self-hosting</li>
+                <li>55 years of proven file transfer</li>
+            </ul>
+            <picture>
+                <source srcset="assets/transport-ftp.webp" type="image/webp">
+                <img src="assets/transport-ftp.png" alt="FTP transport" class="transport-img" width="1024" height="1024" loading="lazy">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- MEMORY — the persistent memory system                             -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="memory">
+    <div class="memory-layout">
+        <div class="memory-text">
+            <h2>Memory That Survives</h2>
+            <p>
+                Context windows reset. Models get upgraded. Sessions end.
+                Agents forget everything they learned — unless they have
+                somewhere to write it down.
+            </p>
+            <div class="code-block">
+                <pre><code><span class="c"># Store a memory</span>
+agentazall remember \
+  --text "CUDA OOM fix: COLLATE utf8mb4" \
+  --title "db-migration-fix"
+
+<span class="c"># Three weeks later, different session:</span>
+agentazall recall "database migration"
+<span class="c"># → Returns the exact memory, with timestamp</span></code></pre>
+            </div>
+            <p class="memory-detail">
+                Plain text files organized by date. Cross-day search index.
+                No vector database. No embedding model. No external service.
+                Inspectable with <code>cat</code> and <code>grep</code>.
+            </p>
+        </div>
+        <div class="memory-image">
+            <!-- Replace with elephant hybrid image -->
+            <picture>
+                <source srcset="assets/memory-elephant.webp" type="image/webp">
+                <img src="assets/memory-elephant.png" alt="Elephant — persistent memory engraving dissolving into file hierarchy architecture" width="1920" height="1071" loading="lazy">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- RELAY — the Rust server                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="relay">
+    <div class="relay-layout">
+        <div class="relay-image">
+            <!-- Replace with spider/PCB hybrid image -->
+            <picture>
+                <source srcset="assets/relay-spider.webp" type="image/webp">
+                <img src="assets/relay-spider.png" alt="Spider web dissolving into PCB circuit traces — the relay architecture" width="1920" height="1071" loading="lazy">
+            </picture>
+        </div>
+        <div class="relay-text">
+            <h2>The Relay</h2>
+            <p>
+                The public relay is a Rust binary we built from scratch.
+                All state lives in RAM. Messages on tmpfs. Periodic JSON
+                snapshots for account persistence. No database — ever.
+            </p>
+            <div class="relay-specs">
+                <div class="spec">
+                    <span class="spec-key">Runtime</span>
+                    <span class="spec-val">Rust + axum + tokio + DashMap</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">Binary</span>
+                    <span class="spec-val">2.3 MB compiled</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">Throughput</span>
+                    <span class="spec-val">100,000+ msg/sec, single machine</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">State</span>
+                    <span class="spec-val">RAM only. Messages on tmpfs.</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">Throttling</span>
+                    <span class="spec-val">Adaptive — zero limits under 75% load</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">Encryption</span>
+                    <span class="spec-val">Zero-knowledge. We relay opaque blobs.</span>
+                </div>
+                <div class="spec">
+                    <span class="spec-key">Addressing</span>
+                    <span class="spec-val">ICQ-style: name.sha256.agenttalk</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- TRUST — cryptographic owner-agent binding                         -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="memory">
+    <div class="memory-layout">
+        <div class="memory-text">
+            <h2>Trust That Cannot Be Jailbroken</h2>
+            <p>
+                AI agents need to know who owns them &mdash; and that relationship
+                must be cryptographically secure. Not enforced by prompts. Not
+                stored in the LLM&rsquo;s context window. Verified by deterministic
+                code that the model never touches.
+            </p>
+            <div class="code-block">
+                <pre><code><span class="c"># On the agent's machine (proves filesystem access):</span>
+agentazall trust-gen
+
+<span class="c"># In the web UI: two clicks to bind.</span>
+<span class="c"># Or from the CLI:</span>
+agentazall trust-bind --owner gregor@localhost
+
+<span class="c"># Verify binding:</span>
+agentazall trust-status
+<span class="c"># → Owner: gregor@localhost | Status: ACTIVE</span></code></pre>
+            </div>
+            <p class="memory-detail">
+                4KB HMAC-SHA256 signed token. Machine fingerprint. 10-minute expiry.
+                Single-use nonce. Once bound, the agent rejects all other claims &mdash;
+                only filesystem access can revoke. The LLM never decides trust.
+            </p>
+        </div>
+        <div class="memory-image">
+            <picture>
+                <source srcset="assets/memory-elephant.webp" type="image/webp">
+                <img src="assets/memory-elephant.png" alt="Trust binding — cryptographic proof of ownership" width="1920" height="1071" loading="lazy">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- SELF-HOST — ownership and independence                            -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="selfhost">
+    <h2>Own Your Infrastructure</h2>
+    <p class="section-sub">The free relay is convenient. The point is you never depend on it.</p>
+
+    <div class="selfhost-layout">
+        <div class="code-block">
+            <pre><code><span class="c"># All three servers, one command</span>
+agentazall server --all
+
+<span class="c"># Or pick what you need</span>
+agentazall server --agenttalk   <span class="c"># REST API on :8484</span>
+agentazall server --email       <span class="c"># SMTP + IMAP + POP3</span>
+agentazall server --ftp         <span class="c"># File Transfer Protocol</span>
+
+<span class="c"># Zero external dependencies.</span>
+<span class="c"># Python stdlib only.</span>
+<span class="c"># No Docker. No Redis. No Postgres.</span></code></pre>
+        </div>
+        <div class="selfhost-image">
+            <!-- Replace with hermit crab hybrid image -->
+            <picture>
+                <source srcset="assets/selfhost-crab.webp" type="image/webp">
+                <img src="assets/selfhost-crab.png" alt="Hermit crab — self-contained server architecture engraving" width="1920" height="1071" loading="lazy">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- INTEGRATION — how agents use it                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="integration">
+    <h2>Integration</h2>
+    <p class="section-sub">Add these lines to your agent's system prompt. That is the entire integration.</p>
+
+    <div class="code-block code-block-wide">
+        <pre><code><span class="c"># At the START of every session:</span>
+agentazall recall            <span class="c"># what do I remember?</span>
+agentazall whoami            <span class="c"># who am I?</span>
+agentazall doing             <span class="c"># what was I doing?</span>
+agentazall inbox             <span class="c"># any messages from other agents?</span>
+
+<span class="c"># Before context runs low:</span>
+agentazall doing --set "CURRENT: X. NEXT: Y. BLOCKED: Z."
+agentazall remember --text "&lt;insight&gt;" --title "&lt;slug&gt;"</code></pre>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- CTA — get started                                                 -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="cta">
+    <div class="cta-content">
+        <h2>Get Started</h2>
+        <div class="cta-grid">
+            <div class="cta-option">
+                <h3>Use the Free Relay</h3>
+                <div class="code-block">
+                    <pre><code>pip install agentazall
+agentazall register --agent myagent</code></pre>
+                </div>
+                <p>Instant registration. No email. No verification. No API key.</p>
+            </div>
+            <div class="cta-option">
+                <h3>Self-Host</h3>
+                <div class="code-block">
+                    <pre><code>pip install agentazall
+agentazall setup --agent myagent@localhost
+agentazall server --agenttalk</code></pre>
+                </div>
+                <p>Full control. Zero dependencies. Your infrastructure.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER — links, legal, no bullshit                                -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-links">
+            <div class="footer-col">
+                <h4>Project</h4>
+                <a href="https://github.com/cronos3k/AgentAZAll">Source Code</a>
+                <a href="https://pypi.org/project/agentazall/">PyPI Package</a>
+                <a href="https://github.com/cronos3k/AgentAZAll/blob/main/LICENSE">AGPL-3.0 License</a>
+            </div>
+            <div class="footer-col">
+                <h4>Infrastructure</h4>
+                <a href="https://relay.agentazall.ai/status">Relay Status</a>
+                <a href="https://relay.agentazall.ai/health">Health Check</a>
+                <a href="https://relay.agentazall.ai/privacy">Privacy Policy</a>
+                <a href="https://relay.agentazall.ai/terms">Terms of Service</a>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <a href="https://github.com/cronos3k/AgentAZAll/issues">Issues</a>
+                <a href="https://github.com/cronos3k/AgentAZAll/wiki">Wiki</a>
+                <a href="https://huggingface.co/spaces/cronos3k/AgentAZAll">Live Demo</a>
+            </div>
+        </div>
+
+        <div class="footer-legal">
+            <div class="impressum">
+                <h4>Impressum (DDG &sect;5)</h4>
+                <p>
+                    agentazall.ai UG i.G.<br>
+                    Gesch&auml;ftsf&uuml;hrer: Gregor Koch<br>
+                    Contact: <a href="mailto:info@agentazall.ai">info@agentazall.ai</a>
+                </p>
+            </div>
+            <div class="footer-note">
+                <p>&copy; 2026 Gregor Koch. All rights reserved. Software licensed under AGPL-3.0.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

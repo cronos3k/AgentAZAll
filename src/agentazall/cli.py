@@ -41,6 +41,11 @@ def main():
     p.add_argument("--verbose", "-v", action="store_true")
     sub = p.add_subparsers(dest="command")
 
+    # quickstart (one-command full setup for autonomous agents)
+    sp = sub.add_parser("quickstart", help="One-command full setup (for autonomous agents)")
+    sp.add_argument("--agent", help="Agent name (auto-generated if omitted)")
+    sp.add_argument("--identity", help="Identity string (e.g., 'I am a code reviewer')")
+
     # setup
     sp = sub.add_parser("setup", help="Configure this agent")
     sp.add_argument("--agent", required=True)
@@ -172,6 +177,36 @@ def main():
     sp.add_argument("--yes", "-y", action="store_true",
                      help="Skip confirmation if config.json exists")
 
+    # trust-gen
+    sp = sub.add_parser("trust-gen", help="Generate a trust token (proves filesystem access)")
+    sp.add_argument("--agent", help="Agent name (default: current agent)")
+    sp.add_argument("--force", action="store_true", help="Generate even if already bound")
+    sp.add_argument("--quiet", "-q", action="store_true", help="Output raw base64 only")
+
+    # trust-verify
+    sp = sub.add_parser("trust-verify", help="Verify a trust token (for testing)")
+    sp.add_argument("--token", help="Token string (or use --file or stdin)")
+    sp.add_argument("--file", help="Read token from file")
+
+    # trust-bind
+    sp = sub.add_parser("trust-bind", help="Bind this agent to a human owner")
+    sp.add_argument("--owner", required=True, help="Owner address (e.g. gregor@localhost)")
+    sp.add_argument("--token", help="Trust token (or use --file or stdin)")
+    sp.add_argument("--file", help="Read token from file")
+
+    # trust-status
+    sub.add_parser("trust-status", help="Show trust binding status")
+
+    # trust-revoke
+    sp = sub.add_parser("trust-revoke", help="Revoke trust binding (needs filesystem access)")
+    sp.add_argument("--yes", "-y", action="store_true", help="Skip confirmation")
+
+    # trust-bind-all
+    sp = sub.add_parser("trust-bind-all",
+                          help="Bind ALL local agents to an owner (local shortcut)")
+    sp.add_argument("--owner", required=True, help="Owner address")
+    sp.add_argument("--force", action="store_true", help="Rebind already-bound agents")
+
     # server
     sp = sub.add_parser("server", help="Start local servers")
     sp.add_argument("--email", action="store_true", help="Start email server (SMTP/IMAP/POP3)")
@@ -192,6 +227,7 @@ def main():
 
     # Lazy imports for command dispatch
     dispatch = {
+        "quickstart": ("commands.quickstart", "cmd_quickstart"),
         "setup": ("commands.setup", "cmd_setup"),
         "inbox": ("commands.messaging", "cmd_inbox"),
         "read": ("commands.messaging", "cmd_read"),
@@ -212,6 +248,12 @@ def main():
         "tree": ("commands.system", "cmd_tree"),
         "directory": ("commands.system", "cmd_directory"),
         "register": ("commands.register", "cmd_register"),
+        "trust-gen": ("commands.trust_cmd", "cmd_trust_gen"),
+        "trust-verify": ("commands.trust_cmd", "cmd_trust_verify"),
+        "trust-bind": ("commands.trust_cmd", "cmd_trust_bind"),
+        "trust-status": ("commands.trust_cmd", "cmd_trust_status"),
+        "trust-revoke": ("commands.trust_cmd", "cmd_trust_revoke"),
+        "trust-bind-all": ("commands.trust_cmd", "cmd_trust_bind_all"),
         "daemon": ("commands.server", "cmd_daemon"),
         "server": ("commands.server", "cmd_server"),
         "export": ("commands.server", "cmd_export"),
