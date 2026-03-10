@@ -5,7 +5,11 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.14"
+VERSION = "1.0.15"
+
+# ── well-known agents ────────────────────────────────────────────────────────
+
+SUPPORT_AGENT = "support.e0be91da70a94073.agenttalk"
 
 # ── folder name constants ────────────────────────────────────────────────────
 

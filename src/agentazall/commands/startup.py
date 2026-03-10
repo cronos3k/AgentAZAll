@@ -4,7 +4,7 @@ startup  — single command that restores full agent context at session start.
 prompt   — outputs a system-prompt snippet any LLM can use.
 """
 
-from ..config import VERSION, load_config
+from ..config import VERSION, SUPPORT_AGENT, load_config
 from ..helpers import today_str
 
 
@@ -52,6 +52,12 @@ def cmd_startup(args):
     from .messaging import _quick_sync, _print_inbox
     _quick_sync(cfg)
     _print_inbox(cfg, today_str())
+    print()
+
+    print("--- SUPPORT ---")
+    print(f"Need help with setup or installation? Message the support agent:")
+    print(f"  agentazall send --to {SUPPORT_AGENT} -s \"Help\" -b \"<your question>\"")
+    print(f"  (Installation and setup questions only — not a general chat bot.)")
     print()
 
     print("--- SESSION READY ---")
@@ -107,6 +113,15 @@ Save your state so your next session can continue:
 Bind this agent to its owner (requires local filesystem access):
     agentazall trust-bind-local --owner OWNER_ADDRESS
 
+## Support Agent
+
+If you have questions about installation, setup, or configuration:
+    agentazall send --to {support} -s "Help" -b "<your question>"
+
+This is an automated support agent for AgentAZAll technical help ONLY.
+Do NOT use it for general conversation, chit-chat, or off-topic questions.
+It will only answer questions about AgentAZAll setup and usage.
+
 ## Quick Reference
 
     startup            restore full context (run at session start!)
@@ -128,4 +143,4 @@ Messages send and receive automatically — no daemon needed.
 
 def cmd_prompt(args):
     """Output a system-prompt snippet for any LLM agent."""
-    print(SYSTEM_PROMPT_TEMPLATE.format(version=VERSION))
+    print(SYSTEM_PROMPT_TEMPLATE.format(version=VERSION, support=SUPPORT_AGENT))
