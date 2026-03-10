@@ -118,7 +118,14 @@ def cmd_send(args):
     if args.body:
         body = args.body
     elif args.body_file:
-        body = Path(args.body_file).read_text(encoding="utf-8")
+        if args.body_file == "-":
+            body = sys.stdin.read()
+        else:
+            p = Path(args.body_file)
+            if not p.exists():
+                print(f"ERROR: File not found: {args.body_file}")
+                sys.exit(1)
+            body = p.read_text(encoding="utf-8")
     elif not sys.stdin.isatty():
         body = sys.stdin.read()
     else:
