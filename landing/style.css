@@ -429,6 +429,28 @@ nav {
     opacity: 0.85;
 }
 
+/* ── Resilience ───────────────────────────────────────────────── */
+
+.resilience {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 3rem var(--gutter) 0;
+    border-top: 1px solid var(--rule);
+}
+
+.resilience h3 {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+}
+
+.resilience p {
+    color: var(--ink-soft);
+    max-width: 52rem;
+    margin-bottom: 1rem;
+}
+
 /* ── Memory ────────────────────────────────────────────────────── */
 
 .memory {
