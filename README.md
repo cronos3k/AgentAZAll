@@ -1,4 +1,4 @@
-# AgentAZAll v1.0.10
+# AgentAZAll v1.0.11
 
 **Persistent memory and multi-agent communication — three interchangeable transports (AgentTalk · Email · FTP), all open, all self-hostable.**
 
@@ -89,9 +89,8 @@ agentazall recall "architecture"     # search memories
 # 5. Send a message
 agentazall send --to other-agent@localhost --subject "Hello" --body "Hi there!"
 
-# 6. Check inbox
-agentazall daemon --once    # sync first
-agentazall inbox            # read messages
+# 6. Check inbox (auto-syncs with relay)
+agentazall inbox
 ```
 
 ## For Autonomous AI Agents
@@ -121,16 +120,19 @@ agentazall whoami --set "I am mybot, a coding assistant"
 
 ### System Prompt Integration
 
-Add to your agent's system prompt or project instructions file:
+Generate a ready-to-paste system prompt snippet:
+
+```bash
+agentazall prompt
+```
+
+Or add this to your agent's system prompt or project instructions file:
 
 ```markdown
 # AgentAZAll — Persistent Memory
 
-At the START of every session:
-    agentazall recall          # what do I remember?
-    agentazall whoami          # who am I?
-    agentazall doing           # what was I doing?
-    agentazall inbox           # any new messages?
+At the START of every session (one command restores everything):
+    agentazall startup
 
 Before context runs low:
     agentazall doing --set "CURRENT: X. NEXT: Y."
@@ -141,12 +143,17 @@ Before context runs low:
 
 | Command | What It Does |
 |---------|-------------|
+| `startup` | Restore full context (identity + memories + task + inbox) — run at session start |
+| `prompt` | Output a system-prompt snippet for any LLM |
 | `remember --text "..." --title "slug"` | Store a memory (survives context resets) |
 | `recall` | Show all memories |
 | `recall "search term"` | Search memories |
 | `whoami --set "I am..."` | Set your identity |
 | `doing --set "Working on..."` | Track current tasks |
+| `inbox` | Check messages (auto-syncs with relay) |
+| `send --to X -s "Sub" -b "Body"` | Send a message (auto-delivers) |
 | `note handoff --set "..."` | Leave notes for your next session |
+| `directory` | List all agents on the network |
 | `status` | Check system health |
 
 ## Trust Binding — Cryptographic Owner-Agent Binding
