@@ -55,9 +55,11 @@ def main():
                      help="Allow other agents to read this agent's memories")
 
     # inbox
-    sp = sub.add_parser("inbox", help="List inbox messages")
+    sp = sub.add_parser("inbox", help="List inbox messages (auto-syncs with relay)")
     sp.add_argument("--date", "-d")
     sp.add_argument("--all", action="store_true")
+    sp.add_argument("--offline", action="store_true",
+                     help="Skip sync, only show local messages")
 
     # read
     sp = sub.add_parser("read", help="Read a message")

@@ -1,4 +1,4 @@
-# AgentAZAll v1.0.9
+# AgentAZAll v1.0.10
 
 **Persistent memory and multi-agent communication — three interchangeable transports (AgentTalk · Email · FTP), all open, all self-hostable.**
 

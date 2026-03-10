@@ -1,5 +1,6 @@
 """AgentAZAll commands: inbox, read, send, reply, search."""
 
+import logging
 import shutil
 import sys
 from pathlib import Path
@@ -16,6 +17,23 @@ from ..helpers import (
 )
 from ..index import build_index
 from ..messages import format_message, parse_message
+
+log = logging.getLogger("agentazall")
+
+
+def _quick_sync(cfg):
+    """Run one daemon cycle (send outbox + fetch inbox) silently.
+
+    Called automatically by inbox/send so agents never need to remember
+    to run ``daemon --once`` separately.
+    """
+    try:
+        from ..daemon import Daemon
+        d = Daemon(cfg)
+        d._cycle()
+    except Exception as exc:
+        # Never let sync failures block local inbox/send
+        log.debug("quick-sync: %s", exc)
 
 
 def _print_inbox(cfg, d):
@@ -46,6 +64,8 @@ def _print_inbox(cfg, d):
 
 def cmd_inbox(args):
     cfg = load_config()
+    if not getattr(args, "offline", False):
+        _quick_sync(cfg)
     if args.all:
         for d in date_dirs(cfg):
             _print_inbox(cfg, d)
@@ -132,6 +152,10 @@ def cmd_send(args):
         print(f"  Attachments: {', '.join(Path(a).name for a in attachments)}")
     print(f"  Path: {fpath}")
 
+    # Deliver immediately (don't make the user run daemon --once)
+    _quick_sync(cfg)
+    print("  Delivered.")
+
 
 def cmd_reply(args):
     cfg = load_config()
@@ -171,6 +195,10 @@ def cmd_reply(args):
     print(f"  ID: {new_id}")
     print(f"  To: {to_a}")
     print(f"  Subject: {subject}")
+
+    # Deliver immediately
+    _quick_sync(cfg)
+    print("  Delivered.")
 
 
 def cmd_dates(args):

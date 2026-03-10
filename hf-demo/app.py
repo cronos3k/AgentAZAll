@@ -207,7 +207,7 @@ data/mailboxes/
 | **Skills & Tools** | `skill`, `tool` | Store and share reusable Python scripts |
 | **Trust Binding** | `trust-gen`, `trust-bind`, `trust-status` | Cryptographic owner-agent binding (unjailbreakable) |
 
-### Trust Binding (v1.0.9)
+### Trust Binding (v1.0.10)
 
 Agents need to know who owns them -- and that relationship must be verified by
 deterministic code, not LLM judgment. AgentAZAll uses **out-of-band trust tokens**:
@@ -286,7 +286,7 @@ def build_demo() -> gr.Blocks:
         css=CSS,
     ) as demo:
         gr.Markdown(
-            "# AgentAZAll v1.0.9 — Persistent Memory & Multi-Agent Communication\n"
+            "# AgentAZAll v1.0.10 — Persistent Memory & Multi-Agent Communication\n"
             "Three transports (AgentTalk · Email · FTP), one interface. "
             "Chat with an agent that *remembers* — powered by "
             "[SmolLM2-1.7B](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct) "
