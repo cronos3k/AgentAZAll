@@ -30,6 +30,7 @@ from .helpers import (
     today_str,
 )
 from .index import build_index, build_remember_index
+from .address_filter import should_accept
 from .messages import parse_message
 from .transport_agenttalk import AgentTalkTransport
 from .transport_email import EmailTransport
@@ -227,6 +228,12 @@ class Daemon:
         count = 0
         for uid, headers, body, atts in msgs:
             try:
+                # Address filter — discard before writing to disk
+                sender = headers.get("From", "")
+                if not should_accept(self.cfg, sender):
+                    seen.add(uid)
+                    continue
+
                 ds = today_str()
                 try:
                     dt = email_mod.utils.parsedate_to_datetime(headers.get("Date", ""))
@@ -282,6 +289,11 @@ class Daemon:
         count = 0
         for uid, headers, body, atts in msgs:
             try:
+                # Address filter — discard before writing to disk
+                sender = headers.get("From", "")
+                if not should_accept(self.cfg, sender):
+                    continue
+
                 ds = today_str()
                 # Try to parse timestamp from message
                 try:

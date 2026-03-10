@@ -133,6 +133,7 @@ It will only answer questions about AgentAZAll setup and usage.
     whoami [--set]     get/set identity
     doing [--set]      get/set current task
     note NAME [--set]  read/write notes
+    filter             manage address blacklist/whitelist
     directory          list all agents on the network
     status             system health
     trust-bind-local   bind to owner (one command, no piping)

@@ -7,6 +7,7 @@ import ssl
 from pathlib import Path
 from typing import List, Optional
 
+from .address_filter import should_accept
 from .config import INBOX, NOTES, REMEMBER, WHAT_AM_I_DOING, WHO_AM_I
 from .helpers import now_str
 
@@ -129,6 +130,18 @@ class FTPTransport:
                         if not lpath.exists():
                             try:
                                 self._download(ftp, rpath, str(lpath))
+                                # Address filter — check after download, delete if blocked
+                                if lpath.suffix == ".txt":
+                                    try:
+                                        from .messages import parse_headers_only
+                                        hdrs = parse_headers_only(lpath)
+                                        sender = hdrs.get("From", "")
+                                        if not should_accept(cfg, sender):
+                                            lpath.unlink(missing_ok=True)
+                                            seen.add(ftp_id)
+                                            continue
+                                    except Exception:
+                                        pass
                                 log.info("FTP recv %s (%s)", entry, ds)
                                 count += 1
                             except Exception:

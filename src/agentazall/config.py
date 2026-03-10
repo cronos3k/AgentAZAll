@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.15"
+VERSION = "1.0.16"
 
 # ── well-known agents ────────────────────────────────────────────────────────
 
@@ -71,6 +71,12 @@ DEFAULT_CONFIG = {
     "agenttalk": {
         "server": "",
         "token": "",
+    },
+    "address_filter": {
+        "mode": "blacklist",
+        "blacklist": [],
+        "whitelist": [],
+        "log_blocked": True,
     },
 }
 

@@ -204,6 +204,15 @@ def main():
     sp.add_argument("--yes", "-y", action="store_true",
                      help="Skip confirmation if config.json exists")
 
+    # filter
+    sp = sub.add_parser("filter", help="Manage address blacklist/whitelist")
+    sp.add_argument("--block", help="Add address to blacklist")
+    sp.add_argument("--unblock", help="Remove address from blacklist")
+    sp.add_argument("--allow", help="Add address to whitelist")
+    sp.add_argument("--disallow", help="Remove address from whitelist")
+    sp.add_argument("--mode", choices=["blacklist", "whitelist", "off"],
+                     help="Set filter mode")
+
     # trust-gen
     sp = sub.add_parser("trust-gen", help="Generate a trust token (proves filesystem access)")
     sp.add_argument("--agent", help="Agent name (default: current agent)")
@@ -282,6 +291,7 @@ def main():
         "status": ("commands.system", "cmd_status"),
         "tree": ("commands.system", "cmd_tree"),
         "directory": ("commands.system", "cmd_directory"),
+        "filter": ("commands.filtering", "cmd_filter"),
         "register": ("commands.register", "cmd_register"),
         "trust-gen": ("commands.trust_cmd", "cmd_trust_gen"),
         "trust-verify": ("commands.trust_cmd", "cmd_trust_verify"),

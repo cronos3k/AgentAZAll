@@ -589,6 +589,42 @@ def trust_paste_bind(agent_name, owner_name, pasted_token):
     return attempt_bind(cfg, pasted_token.strip(), owner_name)
 
 
+# ── address filter ────────────────────────────────────────────────────────────
+
+def get_filter_status_ui():
+    return run_cli("filter")
+
+
+def filter_set_mode(mode):
+    if not mode or not mode.strip():
+        return "Select a mode."
+    return run_cli("filter", "--mode", mode.strip())
+
+
+def filter_block(addr):
+    if not addr or not addr.strip():
+        return "Enter an address or pattern."
+    return run_cli("filter", "--block", addr.strip())
+
+
+def filter_unblock(addr):
+    if not addr or not addr.strip():
+        return "Enter an address or pattern."
+    return run_cli("filter", "--unblock", addr.strip())
+
+
+def filter_allow(addr):
+    if not addr or not addr.strip():
+        return "Enter an address or pattern."
+    return run_cli("filter", "--allow", addr.strip())
+
+
+def filter_disallow(addr):
+    if not addr or not addr.strip():
+        return "Enter an address or pattern."
+    return run_cli("filter", "--disallow", addr.strip())
+
+
 # ── build UI ─────────────────────────────────────────────────────────────────
 
 def build_ui():
@@ -744,6 +780,55 @@ def build_ui():
             search_btn = gr.Button("Search", variant="primary")
             search_output = gr.Textbox(label="Results", lines=15, interactive=False)
             search_btn.click(search_messages, [search_q], search_output)
+
+        with gr.Tab("Filters"):
+            gr.Markdown("### Address Filtering")
+            gr.Markdown(
+                "Control which agents can send you messages. "
+                "Use glob patterns like `*@spamhost.local` or `noisy-bot.*`."
+            )
+            filter_status_btn = gr.Button("Show Filter Status", variant="primary")
+            filter_output = gr.Textbox(label="Filter Status", lines=12, interactive=False)
+            filter_status_btn.click(get_filter_status_ui, [], filter_output)
+
+            gr.Markdown("---")
+            gr.Markdown("### Filter Mode")
+            with gr.Row():
+                filter_mode = gr.Dropdown(
+                    choices=["blacklist", "whitelist", "off"],
+                    label="Mode",
+                    value="blacklist",
+                    interactive=True,
+                )
+                filter_mode_btn = gr.Button("Set Mode")
+            filter_mode_output = gr.Textbox(label="Result", lines=2, interactive=False)
+            filter_mode_btn.click(filter_set_mode, [filter_mode], filter_mode_output)
+
+            gr.Markdown("---")
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("### Blacklist")
+                    gr.Markdown("Addresses here are always blocked, regardless of mode.")
+                    block_addr = gr.Textbox(label="Address / Pattern",
+                                             placeholder="e.g. spammer@host or *.spam.agenttalk")
+                    with gr.Row():
+                        block_btn = gr.Button("Block", variant="primary")
+                        unblock_btn = gr.Button("Unblock")
+                    block_output = gr.Textbox(label="Result", lines=3, interactive=False)
+                    block_btn.click(filter_block, [block_addr], block_output)
+                    unblock_btn.click(filter_unblock, [block_addr], block_output)
+
+                with gr.Column():
+                    gr.Markdown("### Whitelist")
+                    gr.Markdown("In whitelist mode, only these addresses are accepted.")
+                    allow_addr = gr.Textbox(label="Address / Pattern",
+                                             placeholder="e.g. trusted@relay.agentazall.ai")
+                    with gr.Row():
+                        allow_btn = gr.Button("Allow", variant="primary")
+                        disallow_btn = gr.Button("Remove")
+                    allow_output = gr.Textbox(label="Result", lines=3, interactive=False)
+                    allow_btn.click(filter_allow, [allow_addr], allow_output)
+                    disallow_btn.click(filter_disallow, [allow_addr], allow_output)
 
         with gr.Tab("Identity & Tasks"):
             with gr.Row():

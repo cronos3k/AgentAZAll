@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agentazall"
-version = "1.0.15"
+version = "1.0.16"
 description = "Persistent memory and multi-agent communication — three transports (AgentTalk, Email, FTP), all open, all self-hostable"
 readme = "README.md"
 license = "AGPL-3.0-or-later"
