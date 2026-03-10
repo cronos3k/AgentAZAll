@@ -196,6 +196,65 @@ def cmd_trust_revoke(args):
         print("Failed to revoke — .trust file not found.")
 
 
+def cmd_trust_bind_local(args):
+    """One-shot local trust binding — generate + bind in one command.
+
+    No piping, no copy-paste, no encoding issues.  Just works.
+    Requires filesystem access (proof of ownership).
+    """
+    from ..trust import (
+        generate_trust_token,
+        is_bound,
+        get_trust_info,
+        store_trust_binding,
+        burn_nonce,
+        machine_fingerprint,
+    )
+
+    cfg = load_config()
+    base = agent_base(cfg)
+    agent_name = cfg["agent_name"]
+    agent_key = cfg.get("agent_key", "")
+
+    if not agent_key:
+        key_file = base / ".agent_key"
+        if key_file.exists():
+            try:
+                data = json.loads(key_file.read_text(encoding="utf-8"))
+                agent_key = data.get("key", "")
+            except Exception:
+                pass
+
+    if not agent_key:
+        print("ERROR: No agent_key found. Run 'agentazall setup' or 'agentazall register' first.")
+        sys.exit(1)
+
+    owner = args.owner
+    if not owner:
+        print("ERROR: --owner is required (e.g., --owner gregor@localhost)")
+        sys.exit(1)
+
+    if is_bound(base) and not args.force:
+        info = get_trust_info(base)
+        current_owner = info.get("owner", "unknown")
+        print(f"Agent '{agent_name}' is already bound to {current_owner}.")
+        print("Use --force to rebind (requires trust-revoke first).")
+        sys.exit(1)
+
+    fp = machine_fingerprint()
+    result = generate_trust_token(agent_name, agent_key, machine_fp=fp)
+    burn_nonce(base, result["nonce"])
+    store_trust_binding(
+        base, owner, result["nonce"], fp, result["owner_auth_secret"],
+    )
+
+    print(f"Trust binding established!")
+    print(f"  Agent:  {agent_name}")
+    print(f"  Owner:  {owner}")
+    print(f"  Status: ACTIVE")
+    print(f"  Rebind: locked")
+
+
 def cmd_trust_bind_all(args):
     """Bind all local agents to an owner (local convenience shortcut)."""
     from ..trust import (

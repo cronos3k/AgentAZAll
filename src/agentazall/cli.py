@@ -228,6 +228,12 @@ def main():
     sp = sub.add_parser("trust-revoke", help="Revoke trust binding (needs filesystem access)")
     sp.add_argument("--yes", "-y", action="store_true", help="Skip confirmation")
 
+    # trust-bind-local (one-shot: gen + bind, no piping needed)
+    sp = sub.add_parser("trust-bind-local",
+                          help="One-shot local trust binding (gen + bind, no piping)")
+    sp.add_argument("--owner", required=True, help="Owner address (e.g., gregor@localhost)")
+    sp.add_argument("--force", action="store_true", help="Force rebind")
+
     # trust-bind-all
     sp = sub.add_parser("trust-bind-all",
                           help="Bind ALL local agents to an owner (local shortcut)")
@@ -282,6 +288,7 @@ def main():
         "trust-bind": ("commands.trust_cmd", "cmd_trust_bind"),
         "trust-status": ("commands.trust_cmd", "cmd_trust_status"),
         "trust-revoke": ("commands.trust_cmd", "cmd_trust_revoke"),
+        "trust-bind-local": ("commands.trust_cmd", "cmd_trust_bind_local"),
         "trust-bind-all": ("commands.trust_cmd", "cmd_trust_bind_all"),
         "daemon": ("commands.server", "cmd_daemon"),
         "server": ("commands.server", "cmd_server"),

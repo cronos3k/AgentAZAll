@@ -294,6 +294,11 @@ def _dearmor_token(ascii_blob: str) -> bytes:
                 b64_parts.append(clean)
 
     if not b64_parts:
+        # Fallback: treat the entire input as raw base64 (from --quiet)
+        raw = ascii_blob.strip().replace("\n", "").replace("\r", "").replace(" ", "")
+        B64_CHARS = set("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=")
+        if raw and all(c in B64_CHARS for c in raw) and len(raw) >= 100:
+            return b64decode(raw)
         raise ValueError("No payload found in trust token.")
 
     b64_str = "".join(b64_parts)

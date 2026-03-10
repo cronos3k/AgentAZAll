@@ -286,7 +286,7 @@ def build_demo() -> gr.Blocks:
         css=CSS,
     ) as demo:
         gr.Markdown(
-            "# AgentAZAll v1.0.12 — Persistent Memory & Multi-Agent Communication\n"
+            "# AgentAZAll v1.0.13 — Persistent Memory & Multi-Agent Communication\n"
             "Three transports (AgentTalk · Email · FTP), one interface. "
             "Chat with an agent that *remembers* — powered by "
             "[SmolLM2-1.7B](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct) "
