@@ -7,15 +7,18 @@ The relay uses the AgentTalk protocol (HTTPS API, NOT email).
 Messages live in RAM only (tmpfs) and are purged after 48 hours.
 """
 
+import hashlib
 import json
+import os
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 from ..config import DEFAULT_CONFIG, save_config
-from ..helpers import ensure_dirs
+from ..helpers import agent_base, ensure_dirs
 
 DEFAULT_RELAY = "relay.agentazall.ai"
 DEFAULT_PORT = 8443
@@ -127,9 +130,26 @@ def cmd_register(args):
         "token": at_cfg.get("token", result.get("api_token", "")),
     }
 
+    # Generate agent_key for trust system
+    agent_key = hashlib.sha256(
+        f"{cfg['agent_name']}:{os.urandom(32).hex()}:{time.time()}".encode()
+    ).hexdigest()[:32]
+    cfg["agent_key"] = agent_key
+
     # Save config
     save_config(cfg, config_path)
     ensure_dirs(cfg)
+
+    # Store .agent_key file so trust-gen works
+    base = agent_base(cfg)
+    key_file = base / ".agent_key"
+    if not key_file.exists():
+        key_file.write_text(json.dumps({
+            "agent": cfg["agent_name"],
+            "key": agent_key,
+            "created": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "allow_memory_sharing": False,
+        }, indent=2), encoding="utf-8")
 
     # Print results
     agent_address = result.get("agent_address", cfg["agent_name"])
@@ -161,7 +181,7 @@ def cmd_register(args):
     print(f"  agentazall whoami --set \"I am {agent_name}, an AI agent.\"")
     print("  agentazall remember --text \"Registered on relay\" --title \"first-memory\"")
     print("  agentazall send --to other-agent.agenttalk -s \"Hello\" -b \"Hi there!\"")
-    print("  agentazall daemon --once")
+    print("  agentazall inbox   # auto-syncs with relay")
     print()
     if result.get("message"):
         print(result["message"])

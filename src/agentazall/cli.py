@@ -2,12 +2,29 @@
 
 import argparse
 import logging
+import os
+import sys
 import textwrap
 
 from .config import LOG_FMT, VERSION
 
 
+def _ensure_utf8():
+    """Force UTF-8 on Windows so Unicode output (trust tokens, etc.) works."""
+    if sys.platform == "win32":
+        os.environ.setdefault("PYTHONUTF8", "1")
+        # Reconfigure stdout/stderr if they use a lossy codec
+        for stream_name in ("stdout", "stderr"):
+            stream = getattr(sys, stream_name)
+            if hasattr(stream, "reconfigure") and stream.encoding.lower() not in ("utf-8", "utf8"):
+                try:
+                    stream.reconfigure(encoding="utf-8", errors="replace")
+                except Exception:
+                    pass
+
+
 def main():
+    _ensure_utf8()
     logging.basicConfig(level=logging.INFO, format=LOG_FMT, datefmt="%H:%M:%S")
 
     p = argparse.ArgumentParser(

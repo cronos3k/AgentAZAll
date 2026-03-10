@@ -13,6 +13,7 @@ from ..helpers import (
     date_dirs,
     ensure_dirs,
     require_identity,
+    safe_move,
     today_str,
 )
 from ..index import build_index
@@ -141,7 +142,7 @@ def cmd_send(args):
 
     tmp = fpath.with_suffix(".tmp")
     tmp.write_text(content, encoding="utf-8")
-    tmp.rename(fpath)
+    safe_move(str(tmp), str(fpath))
 
     build_index(cfg, d)
     print("Message queued.")
