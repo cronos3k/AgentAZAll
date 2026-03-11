@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Mailbox Principle — Filesystem-First Communication for Autonomous AI Agents</title>
+<style>
+:root {
+    --bg: #ffffff;
+    --text: #1a1a2e;
+    --text-secondary: #4a4a6a;
+    --accent: #2563eb;
+    --accent-light: #dbeafe;
+    --border: #e2e8f0;
+    --code-bg: #f1f5f9;
+    --table-stripe: #f8fafc;
+    --figure-bg: #fafbfc;
+    --max-width: 820px;
+    --font-serif: "Georgia", "Times New Roman", serif;
+    --font-sans: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: "Cascadia Code", "Fira Code", "Consolas", monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    line-height: 1.75;
+    color: var(--text);
+    background: var(--bg);
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+}
+
+/* Headings */
+h1 {
+    font-family: var(--font-sans);
+    font-size: 2.4em;
+    font-weight: 800;
+    line-height: 1.2;
+    margin: 0 0 0.3em;
+    color: var(--text);
+    letter-spacing: -0.02em;
+}
+
+h2 {
+    font-family: var(--font-sans);
+    font-size: 1.6em;
+    font-weight: 700;
+    line-height: 1.3;
+    margin: 2.5em 0 0.6em;
+    color: var(--text);
+    padding-bottom: 0.3em;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-sans);
+    font-size: 1.25em;
+    font-weight: 600;
+    margin: 2em 0 0.5em;
+    color: var(--text);
+}
+
+h4 {
+    font-family: var(--font-sans);
+    font-size: 1.1em;
+    font-weight: 600;
+    margin: 1.5em 0 0.4em;
+    color: var(--text-secondary);
+}
+
+/* Paragraphs */
+p {
+    margin: 0 0 1.2em;
+    text-align: justify;
+    hyphens: auto;
+}
+
+/* Links */
+a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+a:hover { border-bottom-color: var(--accent); }
+
+/* Code */
+code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #c7254e;
+}
+
+pre {
+    background: #0f172a;
+    color: #e2e8f0;
+    padding: 20px 24px;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 1.5em 0;
+    line-height: 1.5;
+}
+
+pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    font-size: 0.85em;
+}
+
+/* Tables */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5em 0;
+    font-family: var(--font-sans);
+    font-size: 0.9em;
+}
+
+.data-table th {
+    background: var(--accent);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+.data-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-table tbody tr:nth-child(even) {
+    background: var(--table-stripe);
+}
+
+.data-table tbody tr:hover {
+    background: var(--accent-light);
+}
+
+/* Lists */
+ul, ol {
+    margin: 0.8em 0 1.2em 1.8em;
+}
+li { margin: 0.3em 0; }
+
+/* Figures */
+.paper-figure {
+    margin: 2em 0;
+    text-align: center;
+    background: var(--figure-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.paper-figure img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+}
+
+.paper-figure figcaption {
+    font-family: var(--font-sans);
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-top: 12px;
+    font-style: italic;
+}
+
+/* Chapter sections */
+.chapter {
+    margin-bottom: 3em;
+}
+
+#\30 0-index {
+    text-align: center;
+    margin-bottom: 4em;
+}
+
+#\30 0-index h1 {
+    font-size: 2.8em;
+    margin-bottom: 0.1em;
+}
+
+#\30 0-index h2 {
+    border: none;
+    font-size: 1.3em;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin-top: 0;
+}
+
+#\30 0-index h3 {
+    font-size: 1.1em;
+    font-weight: 400;
+    color: var(--text-secondary);
+}
+
+/* Horizontal rules */
+hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 3em 0;
+}
+
+/* Strong in paragraphs (finding labels) */
+p > strong:first-child {
+    color: var(--accent);
+}
+
+/* Table of Contents */
+#\30 0-index ol, #\30 0-index ul {
+    list-style: none;
+    margin: 1em 0;
+    padding: 0;
+}
+
+#\30 0-index li {
+    padding: 0.3em 0;
+}
+
+/* Print styles */
+@media print {
+    body {
+        font-size: 11pt;
+        max-width: none;
+        padding: 0;
+    }
+    .paper-figure {
+        break-inside: avoid;
+    }
+    .chapter {
+        break-before: page;
+    }
+    pre {
+        background: #f5f5f5 !important;
+        color: #333 !important;
+        border: 1px solid #ddd;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        font-size: 15px;
+        padding: 20px 16px 60px;
+    }
+    h1 { font-size: 1.8em; }
+    h2 { font-size: 1.3em; }
+    .data-table { font-size: 0.8em; }
+    .data-table td, .data-table th { padding: 6px 8px; }
+}
+</style>
+</head>
+<body>
+
+<section id="00-index" class="chapter">
+<h1 id="the-mailbox-principle">The Mailbox Principle</h1>
+<h2 id="filesystem-first-communication-for-autonomous-ai-agents">Filesystem-First Communication for Autonomous AI Agents</h2>
+<figure class="paper-figure">
+    <img src="assets/hero-mailbox.png" alt="The Mailbox Principle — where simplicity meets infrastructure" loading="lazy">
+    <figcaption>The Mailbox Principle — where simplicity meets infrastructure</figcaption>
+</figure>
+
+<p><strong>Gregor H. Max Koch, MSc</strong></p>
+<p><em>MSc Information Systems Management (Distinction), University of Liverpool</em></p>
+<p>March 2026</p>
+<hr>
+<h3 id="abstract">Abstract</h3>
+<p>Contemporary agent communication protocols — MCP, A2A, ACP — share an unexamined assumption: that AI agents require specialized, connection-oriented infrastructure to exchange messages. We challenge this assumption by presenting AgentAZAll, a system built on a different premise: an agent's mailbox is a directory, a message is a text file, and the transport is irrelevant.</p>
+<p>We describe a filesystem-first architecture where all agent state — messages, memory, identity — exists as plain text files organized by date. Three interchangeable transport backends (HTTPS relay, SMTP/IMAP email, FTP) deliver messages into this filesystem without the agent needing to know which one was used. Every message carries an Ed25519 signature embedded in the message body itself, surviving any relay, forward, or copy operation.</p>
+<p>We validate this design empirically. In a controlled integration test, four autonomous LLM instances spanning three distinct model architectures (Qwen3-Coder 81B, Hermes-4 70B, Devstral 24B) exchanged 1,744 cryptographically signed messages across all three transports over 30 minutes, with zero protocol failures and a 98.8% inference success rate. Separately, agents running Claude Opus 4, Qwen 3.5 9B, and Devstral 24B communicated over this protocol in production for multiple weeks, discovering and resolving integration issues through the protocol itself.</p>
+<p>The result suggests that for asynchronous, loosely coupled agent messaging, the communication problem has been overcomplicated. The simplest design — files in directories, signed and delivered — provides a robust and practical alternative to connection-oriented protocols.</p>
+<hr>
+<h3 id="table-of-contents">Table of Contents</h3>
+<ul>
+<li><a href="01-introduction.md">Introduction — The Question Nobody Asks</a></li>
+<li><a href="02-related-work.md">Related Work — The Protocol Landscape</a></li>
+<li><a href="03-design-principles.md">Design Principles — Five Axioms</a></li>
+<li><a href="04-architecture.md">System Architecture</a></li>
+<li><a href="05-cryptographic-identity.md">Cryptographic Identity</a></li>
+<li><a href="06-transport-layer.md">The Transport Layer — Three Protocols, One Interface</a></li>
+<li><a href="07-experimental-design.md">Experimental Design</a></li>
+<li><a href="08-results.md">Results</a></li>
+<li><a href="09-cross-model-communication.md">Cross-Model Discourse Analysis</a></li>
+<li><a href="10-discussion.md">Discussion — Why Simplicity Scales</a></li>
+<li><a href="11-conclusion.md">Conclusion</a></li>
+<li><a href="12-references.md">References</a></li>
+</ul>
+<hr>
+<p><em>Correspondence: github.com/cronos3k/AgentAZAll</em></p>
+
+</section>
+
+<section id="01-introduction" class="chapter">
+<h1 id="1-introduction-the-question-nobody-asks">1. Introduction — The Question Nobody Asks</h1>
+<h2 id="1-1-the-paradox">1.1 The Paradox</h2>
+<p>In 2026, large language models can write compilers, prove theorems, and hold nuanced conversations across languages. Yet when two AI agents need to send each other a message, the industry reaches for connection-oriented protocols that assume persistent network links, cloud infrastructure, and specific runtime environments.</p>
+<p>The Model Context Protocol (MCP) injects tool descriptions into the LLM's context window, consuming tokens that could be spent reasoning. The Agent-to-Agent protocol (A2A) requires agents to publish discovery documents at well-known HTTP endpoints. The Agent Communication Protocol (ACP) mandates REST API registration with central brokers. Each assumes that agent communication is fundamentally an API design problem.</p>
+<p>We question that assumption.</p>
+<h2 id="1-2-the-question">1.2 The Question</h2>
+<p>What if we discard every assumption about how AI agents should communicate and start from first principles?</p>
+<p>A human checks their email. The email is a file. It arrived via SMTP, or maybe IMAP, or maybe someone dropped it on a USB drive. The human does not care. They read the file. They write a reply. The reply leaves by whatever transport happens to be available.</p>
+<p>This is the mental model we propose for AI agents. An agent's mailbox is a directory on a filesystem. A message is a plain text file with headers and a body. The agent reads its inbox by listing files. It sends a reply by writing a file to its outbox. A daemon process — entirely separate from the agent — handles the transport: pushing outbox files to recipients via HTTPS, SMTP, or FTP, and pulling new files into the inbox from the same.</p>
+<p>The agent never knows which transport was used. It never needs to.</p>
+<h2 id="1-3-the-thesis">1.3 The Thesis</h2>
+<p>We argue that for asynchronous, loosely coupled agent communication under weak infrastructure assumptions, the simplest possible design — plain text files in dated directories, signed with Ed25519, delivered by interchangeable transports — is a strong and often preferable design point compared to purpose-built protocols. It is preferable because:</p>
+<ul>
+<li>It requires no active network connections. Agents communicate asynchronously through the filesystem, which works offline, over air gaps, and across unreliable networks.</li>
+<li>It is model-agnostic. Any system that can read a text file and execute a command-line tool can participate — no SDK, no library, no API binding required.</li>
+<li>It is transport-agnostic. The same message format works over HTTPS, SMTP/IMAP, FTP, local filesystem copy, or any future transport without modification.</li>
+<li>It is cryptographically self-authenticating. Ed25519 signatures are embedded in the message body, not in transport-layer headers that can be stripped by intermediaries.</li>
+<li>It is inspectable. Every message is a human-readable text file. Debugging is <code>cat</code>. Search is <code>grep</code>. Backup is <code>rsync</code>.</li>
+</ul>
+<h2 id="1-4-contribution">1.4 Contribution</h2>
+<p>AgentAZAll is not a proposed architecture awaiting implementation. It is a working, open-source system — published as a Python package (<code>pip install agentazall</code>), hosted on GitHub, and operating on a public relay server that anyone can use for testing. The claims in this paper can be verified by installing the package and running the included integration tests. Everything described here already exists, already runs, and is already being used.</p>
+<p>This paper presents the design and validates it empirically:</p>
+<ul>
+<li><strong>Architecture</strong>: A complete filesystem-first agent communication system with three interchangeable transport backends, inline cryptographic signatures, and a unified sync daemon. The entire core runs on Python's standard library with zero external dependencies.</li>
+</ul>
+<ul>
+<li><strong>Integration test</strong>: Four autonomous LLM instances — Qwen3-Coder-Next (81B parameters), Hermes-4-70B, and Devstral-Small (24B) — exchanged 1,744 cryptographically signed messages across all three transports in 30 minutes of autonomous operation, with zero protocol failures.</li>
+</ul>
+<ul>
+<li><strong>Field deployment</strong>: The system was used in production for weeks of inter-agent communication between models from three different vendors (Anthropic, Alibaba, Mistral), with agents discovering and resolving integration issues through the protocol itself.</li>
+</ul>
+<ul>
+<li><strong>Analysis</strong>: We present quantitative results on message throughput, inference latency, and cross-model discourse coherence, and qualitative analysis of emergent conversational behaviors between architecturally distinct language models.</li>
+</ul>
+<h2 id="1-5-paper-structure">1.5 Paper Structure</h2>
+<p>Chapter 2 surveys the current protocol landscape. Chapter 3 states our five design axioms. Chapters 4-6 describe the system architecture, cryptographic identity, and transport layer. Chapter 7 details the experimental setup. Chapter 8 presents quantitative results. Chapter 9 analyzes cross-model discourse. Chapter 10 discusses implications and limitations. Chapter 11 concludes.</p>
+<hr>
+
+</section>
+
+<section id="02-related-work" class="chapter">
+<h1 id="2-related-work-the-protocol-landscape">2. Related Work — The Protocol Landscape</h1>
+<h2 id="2-1-historical-foundations">2.1 Historical Foundations</h2>
+<p>The problem of agent communication predates large language models by three decades.</p>
+<p><strong>KQML</strong> (Knowledge Query and Manipulation Language), developed in the early 1990s under DARPA's Knowledge Sharing Effort, introduced the concept of <em>performatives</em> — semantic message types based on speech act theory [1]. A message was not just data; it was an assertion, a query, a request, or a denial. This semantic layer enabled agents with no shared codebase to coordinate through shared meaning.</p>
+<p><strong>FIPA ACL</strong> (Foundation for Intelligent Physical Agents, Agent Communication Language), standardized in the late 1990s, refined KQML with approximately twenty communicative acts grounded in BDI (Beliefs, Desires, Intentions) mental state models [2]. FIPA ACL achieved formal standardization through IEEE but saw limited adoption outside academic multi-agent systems research.</p>
+<p>Both KQML and FIPA ACL got one thing right: agent communication is fundamentally about exchanging <em>meaningful messages</em>, not about the transport mechanism. Neither prescribed how messages should be delivered. Both disappeared from industry practice when the agent systems they served failed to reach production.</p>
+<p>The core insight — that transport is orthogonal to communication semantics — would prove durable.</p>
+<h2 id="2-2-model-context-protocol-mcp">2.2 Model Context Protocol (MCP)</h2>
+<p>Anthropic's Model Context Protocol [3], released in November 2024, addresses the integration between LLM applications and external tools. MCP uses JSON-RPC 2.0 over stdio (local) or HTTP with Server-Sent Events (remote) to expose three primitive types: <strong>Tools</strong> (model-invoked capabilities), <strong>Resources</strong> (application-provided data), and <strong>Prompts</strong> (user-controlled templates).</p>
+<p>MCP is well-designed for its purpose: bridging an LLM's context window with external functionality. However, it carries structural limitations when applied to inter-agent communication:</p>
+<p><strong>Context window coupling.</strong> Every registered tool's description is injected into the model's prompt. As the number of tools grows, context budget shrinks — creating a direct tradeoff between capability and reasoning capacity.</p>
+<p><strong>Connection dependency.</strong> MCP requires persistent connections (stdio pipes or SSE streams). If the connection drops, the server's state is lost. This makes MCP unsuitable for asynchronous, offline, or intermittent communication.</p>
+<p><strong>No identity layer.</strong> MCP authenticates at the transport level (tokens, OAuth). There is no mechanism for a message to carry self-authenticating proof of origin that survives forwarding or relay.</p>
+<p><strong>Unidirectional design.</strong> MCP is a client-server protocol. The model calls tools on a server. Two agents cannot use MCP to talk to each other without an intermediary that translates one agent's tool calls into another agent's resources — a pattern that adds complexity without adding capability.</p>
+<h2 id="2-3-agent-to-agent-protocol-a2a">2.3 Agent-to-Agent Protocol (A2A)</h2>
+<p>Google's A2A protocol [4], released in April 2025 and subsequently donated to the Linux Foundation, directly addresses peer-to-peer agent communication. Agents publish <strong>Agent Cards</strong> — JSON metadata documents at <code>/.well-known/agent.json</code> — declaring their capabilities, skills, endpoints, and authentication methods. Communication uses JSON-RPC 2.0 over HTTP/HTTPS, with SSE for streaming and webhooks for asynchronous notifications.</p>
+<p>A2A represents genuine progress toward agent interoperability:</p>
+<p><strong>Discovery.</strong> Agent Cards provide a standardized way for agents to advertise their capabilities. This is conceptually elegant and draws on the well-known URI pattern from web standards.</p>
+<p><strong>Stateful tasks.</strong> A2A introduces a task model with unique identifiers, status tracking, and artifact history — acknowledging that agent interactions are conversations, not single request-response pairs.</p>
+<p><strong>DID support.</strong> Decentralized Identifiers (DIDs) are supported for identity verification, pointing toward cryptographic trust without centralized authorities.</p>
+<p>However, A2A inherits the assumptions of its web origins:</p>
+<p><strong>Always-online requirement.</strong> Agent Cards must be served at HTTP endpoints. Webhook callbacks require reachable URLs. An agent behind a firewall, on a local network, or running offline cannot participate without proxy infrastructure.</p>
+<p><strong>Network-centric state.</strong> Task state lives on the responding agent's server. If that server is unavailable, the task's history is inaccessible. The protocol has no mechanism for state to survive server restarts or network partitions.</p>
+<p><strong>Transport lock-in.</strong> Despite its flexibility, A2A is fundamentally an HTTP protocol. Agents cannot communicate over email, FTP, or local filesystem — transports that exist in every computing environment regardless of network configuration.</p>
+<h2 id="2-4-agent-communication-protocol-acp">2.4 Agent Communication Protocol (ACP)</h2>
+<p>IBM's Agent Communication Protocol [5], released in March 2025, takes a REST-native approach to agent orchestration. ACP distinguishes itself by explicit support for air-gapped enterprise environments and asynchronous multi-part MIME streaming.</p>
+<p>ACP is the closest existing protocol to our design philosophy. It recognizes that enterprise environments cannot always guarantee persistent connections, that REST calls should be debuggable with <code>curl</code>, and that agent metadata belongs with the agent rather than in a central registry.</p>
+<p>The gap remains: ACP is still API-first. The data model is HTTP requests and responses, not files. An agent's state lives in API endpoints, not on the filesystem. While ACP can operate in air-gapped networks, it still requires HTTP infrastructure within that network.</p>
+<h2 id="2-5-openai-s-position">2.5 OpenAI's Position</h2>
+<p>As of early 2026, OpenAI has not published a dedicated agent-to-agent protocol. Their approach treats agent communication as a routing problem within their API: agents call the Assistants API, which manages threads, runs, and tool use internally [6]. OpenAI participates in the Agentic AI Foundation (AAIF) standardization effort and supports MCP integration, but their practical stance is that agent interoperability is best solved at the platform level rather than the protocol level.</p>
+<p>This is a reasonable position for a cloud-first vendor. It is not a solution for agents that need to communicate outside any single vendor's platform.</p>
+<h2 id="2-6-the-gap">2.6 The Gap</h2>
+<p>The following table summarizes the landscape:</p>
+<table class="data-table">
+<thead><tr><th>Property</th><th>KQML/FIPA</th><th>MCP</th><th>A2A</th><th>ACP</th><th>**This work**</th></tr></thead>
+<tbody>
+<tr><td>Peer-to-peer</td><td>Yes</td><td>No</td><td>Yes</td><td>Brokered</td><td>Yes</td></tr>
+<tr><td>Offline capable</td><td>Yes</td><td>No</td><td>No</td><td>Partial</td><td><strong>Yes</strong></td></tr>
+<tr><td>Transport independent</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+<tr><td>Cryptographic signing</td><td>No</td><td>No</td><td>Transport</td><td>Transport</td><td><strong>Message-level</strong></td></tr>
+<tr><td>Model agnostic</td><td>Yes</td><td>No</td><td>Yes</td><td>Yes</td><td><strong>Yes</strong></td></tr>
+<tr><td>No external dependencies</td><td>Yes</td><td>No</td><td>No</td><td>No</td><td><strong>Yes</strong></td></tr>
+<tr><td>Inspectable (plain text)</td><td>Partial</td><td>No</td><td>No</td><td>Partial</td><td><strong>Yes</strong></td></tr>
+<tr><td>Empirically validated</td><td>Limited</td><td>N/A</td><td>N/A</td><td>N/A</td><td><strong>1,744 messages</strong></td></tr>
+</tbody></table>
+<p>None of the contemporary protocols treat the filesystem as the primary data model. None achieve true transport independence — the ability for the same message, in the same format, to be delivered by HTTPS, SMTP, FTP, or a USB drive. None embed cryptographic signatures at the message level rather than the transport level.</p>
+<p>This is the gap we fill.</p>
+<hr>
+
+<figure class="paper-figure">
+    <img src="assets/chart-protocol-comparison.png" alt="Figure 1. Protocol feature comparison across AgentAZAll, MCP, A2A, and ACP" loading="lazy">
+    <figcaption>Figure 1. Protocol feature comparison across AgentAZAll, MCP, A2A, and ACP</figcaption>
+</figure>
+
+</section>
+
+<section id="03-design-principles" class="chapter">
+<h1 id="3-design-principles-five-axioms">3. Design Principles — Five Axioms</h1>
+<p>The system rests on five axioms. Each was chosen not because it is novel — individually, none of them are — but because their combination produces emergent properties that no existing protocol achieves.</p>
+<h2 id="axiom-1-the-filesystem-is-truth">Axiom 1: The Filesystem Is Truth</h2>
+<p>All agent state is plain text on the filesystem. Messages, memories, identity, notes, tasks — every piece of data the agent produces or consumes is a file in a directory.</p>
+<pre><code class="language-">mailbox/
+  agent-name.agenttalk/
+    2026-03-11/
+      inbox/          # received messages
+      outbox/         # pending sends
+      sent/           # delivered messages
+      remember/       # persistent memories
+      notes/          # structured notes
+      who_am_i/       # agent identity
+      what_am_i_doing/ # current task status
+      index.txt       # daily digest
+</code></pre>
+<p>This is not a simplification. It is a deliberate architectural choice with specific consequences:</p>
+<p><strong>Durability.</strong> Files survive process crashes, power failures, and software upgrades. There is no database to corrupt, no WAL to replay, no migration to run.</p>
+<p><strong>Inspectability.</strong> Any message can be read with <code>cat</code>. Any conversation can be searched with <code>grep</code>. Any backup is <code>cp -r</code>. No special tools, no query language, no admin console.</p>
+<p><strong>Composability.</strong> The filesystem is the universal interface of computing. Scripts in any language can read, write, and watch these files. Agents built on any framework — or no framework at all — can participate.</p>
+<p><strong>Natural archival.</strong> The daily directory structure means each day is a sealed capsule. Old conversations do not interfere with current state. Disk usage is predictable and purgeable.</p>
+<h2 id="axiom-2-transport-is-pluggable">Axiom 2: Transport Is Pluggable</h2>
+<p>The message format is fixed. The delivery mechanism is not.</p>
+<p>A message is a plain text file with RFC 822-style headers and a body separated by <code>---</code>. This format can be transmitted verbatim over:</p>
+<ul>
+<li><strong>HTTPS</strong> as a JSON payload to a REST API</li>
+<li><strong>SMTP</strong> as the body of a standard email</li>
+<li><strong>FTP</strong> as a file uploaded to a directory</li>
+<li><strong>rsync/scp</strong> as a simple file copy</li>
+<li><strong>USB drive</strong> as a physical transfer</li>
+</ul>
+<p>The agent writes a file to its <code>outbox/</code> directory. A daemon process — entirely decoupled from the agent — picks up the file and delivers it via whichever transports are configured. On the receiving end, the daemon pulls messages from all configured transports into the agent's <code>inbox/</code> directory.</p>
+<p>The agent never makes a network call. The agent never manages a connection. The agent reads files and writes files. Everything else is the daemon's problem.</p>
+<p>This decoupling has a non-obvious consequence: <strong>multi-transport redundancy</strong>. The daemon can be configured with multiple transport instances — two email accounts, three FTP servers, a relay. It delivers via all of them. The receiving daemon deduplicates. Messages survive transport failures because they can arrive by alternate paths.</p>
+<h2 id="axiom-3-identity-is-cryptographic">Axiom 3: Identity Is Cryptographic</h2>
+<p>Every agent generates an Ed25519 keypair on first run. Every message is signed before leaving the outbox. The signature is embedded in the message body, not in transport-layer headers.</p>
+<p>This distinction is critical. Transport-layer signatures (TLS certificates, OAuth tokens, DKIM headers) authenticate the <em>connection</em>, not the <em>message</em>. When a message is forwarded, relayed, stored, or retrieved later, transport-layer authentication is gone. The message is an orphan — its origin is a claim, not a proof.</p>
+<p>By embedding the signature in the message body using PGP-style markers, the proof of origin travels with the content through any number of intermediaries, across any transport, for any duration. A message retrieved from an FTP server three months later can still be verified against the sender's public key.</p>
+<p>The trust model is trust-on-first-use (TOFU), the same model used by SSH. The first time an agent receives a signed message from a new peer, it records the public key in a local keyring. Subsequent messages from the same peer are verified against the stored key. Key changes trigger warnings.</p>
+<h2 id="axiom-4-offline-first">Axiom 4: Offline-First</h2>
+<p>The system must work without internet access. This is not a fallback mode — it is the primary design target.</p>
+<p>Concretely:</p>
+<ul>
+<li>Registration can be done against a local relay server.</li>
+<li>Messages between agents on the same machine use direct filesystem copy — zero network.</li>
+<li>FTP and email transports work with local servers running on the same host.</li>
+<li>The daemon operates in a poll-sync model that tolerates arbitrary delays between cycles.</li>
+<li>All dependencies (Python stdlib, optional PyNaCl for Ed25519) can be bundled.</li>
+</ul>
+<p>This design choice was driven by practical requirements: air-gapped enterprise networks, intermittent satellite links, GPU compute clusters without internet access, and the general principle that a communication system that requires the internet to send a message to a process running on the same machine has lost the plot.</p>
+<h2 id="axiom-5-endpoint-agnostic">Axiom 5: Endpoint-Agnostic</h2>
+<p>The system has no opinion about what runs behind an address.</p>
+<p>An agent participates in the network by:</p>
+<ul>
+<li>Reading text files from its <code>inbox/</code> directory</li>
+<li>Writing text files to its <code>outbox/</code> directory</li>
+<li>Optionally calling the <code>agentazall</code> CLI for convenience operations</li>
+</ul>
+<p>This interface is so minimal that it imposes no constraint on what the endpoint actually is. A shell script can be an agent. A Python program calling a local llama-server can be an agent. A Claude Code session talking to Anthropic's API can be an agent. A human checking a directory on a USB drive can be an agent.</p>
+<p>But the implications extend beyond language models. An image generation service behind an address receives a message — "a cat sitting on a lunar rover, photorealistic" — and returns the result as an attachment. A translation model receives English text and returns French. A text-to-speech service receives prose and returns audio. A code analysis tool receives a repository path and returns a report. None of these are language models in the conversational sense. All of them can participate in the protocol without modification, because the protocol requires only that the endpoint can read a text message and produce a response.</p>
+<p>There is no SDK to integrate, no callback to implement, no event loop to run, no API documentation to parse. The interface is the filesystem. The message format is the same whether the sender is a 70-billion-parameter reasoning model or a 200-line Python script wrapping a diffusion pipeline.</p>
+<p>This stands in deliberate contrast to MCP, which requires implementing a JSON-RPC server with specific capability declarations, and A2A, which requires publishing an Agent Card at a well-known HTTP endpoint. Both couple the communication protocol to the agent's runtime environment. We decouple them completely.</p>
+<hr>
+
+</section>
+
+<section id="04-architecture" class="chapter">
+<h1 id="4-system-architecture">4. System Architecture</h1>
+<h2 id="4-1-message-format">4.1 Message Format</h2>
+<p>A message is a UTF-8 plain text file with the following structure:</p>
+<pre><code class="language-">From: sender.fingerprint.agenttalk
+To: recipient.fingerprint.agenttalk
+Subject: Discussion topic
+Date: 2026-03-11 14:23:55
+Message-ID: &lt;a1b2c3d4e5f6&gt;
+Status: new
+
+---
+Message body text here.
+</code></pre>
+<p>Headers follow RFC 822 conventions. The body is separated by a line containing only <code>---</code>. The <code>Status</code> field is mutable: it transitions from <code>new</code> to <code>read</code> when the agent processes the message.</p>
+<p>Messages may include binary attachments. An optional <code>Attachments</code> header lists the filenames. The actual binary data is carried by the transport layer — base64-encoded within the JSON envelope for AgentTalk, MIME multipart for email, and raw files in a subdirectory for FTP and local filesystem. On delivery, attachments are written to a directory alongside the message file, named by the message ID. This design keeps the message body as pure text while supporting arbitrary binary payloads (audio, images, documents) without modifying the core format.</p>
+<p>When Ed25519 signing is enabled (default), the body is wrapped in PGP-style markers:</p>
+<pre><code class="language-">---BEGIN AGENTAZALL SIGNED MESSAGE---
+Fingerprint: 3430f3e127705937
+Public-Key: &lt;base64-encoded-Ed25519-public-key&gt;
+
+Original message body here.
+---END AGENTAZALL SIGNED MESSAGE---
+---BEGIN AGENTAZALL SIGNATURE---
+&lt;base64-encoded-Ed25519-signature&gt;
+---END AGENTAZALL SIGNATURE---
+</code></pre>
+<p>The signature covers the content between <code>BEGIN SIGNED MESSAGE</code> and <code>END SIGNED MESSAGE</code>, including the fingerprint and public key metadata. This means the verification is self-contained: a recipient who has never communicated with the sender can verify the signature using the public key embedded in the message itself.</p>
+<h2 id="4-2-directory-structure">4.2 Directory Structure</h2>
+<p>All agent data lives under a single root directory:</p>
+<pre><code class="language-">$AGENTAZALL_ROOT/
+  config.json              # agent configuration
+  .identity_key            # Ed25519 keypair (private)
+  .keyring.json            # peer public keys
+  .seen_ids                # deduplication tracker
+  data/
+    mailboxes/
+      agent-name.fp.agenttalk/
+        2026-03-11/
+          inbox/            # received messages
+          outbox/           # pending outgoing
+          sent/             # successfully delivered
+          remember/         # persistent memories
+          notes/            # structured notes
+          who_am_i/         # agent identity
+          what_am_i_doing/  # current task
+          index.txt         # daily digest
+        2026-03-10/
+          ...               # previous day (sealed)
+</code></pre>
+<p>The daily segmentation serves two purposes. First, it provides natural lifecycle management: days older than a retention threshold can be archived or deleted without complex queries. Second, it prevents unbounded directory growth — a filesystem with millions of files in one directory degrades; thousands of files across hundreds of directories does not.</p>
+<h2 id="4-3-configuration">4.3 Configuration</h2>
+<p>Agent configuration is a single JSON file supporting multiple transport instances:</p>
+<pre><code class="language-json">{
+  "agent_name": "agent.fingerprint.agenttalk",
+  "agent_key": "bearer-token-for-relay",
+  "mailbox_dir": "./data/mailboxes",
+  "transport": "agenttalk",
+  "agenttalk": {
+    "server": "https://relay.example.com:8443",
+    "token": "..."
+  },
+  "email_accounts": [
+    { "imap_server": "...", "smtp_server": "...", "username": "..." }
+  ],
+  "ftp_servers": [
+    { "host": "...", "port": 2121, "user": "...", "password": "..." }
+  ],
+  "filter": {
+    "mode": "whitelist",
+    "whitelist": ["trusted-peer.*.agenttalk"],
+    "blacklist": []
+  }
+}
+</code></pre>
+<p>Multi-transport arrays allow an agent to maintain redundant communication paths. The daemon delivers outgoing messages via all configured transports and deduplicates incoming messages by Message-ID.</p>
+<h2 id="4-4-the-daemon">4.4 The Daemon</h2>
+<figure class="paper-figure">
+    <img src="assets/diagram-architecture.png" alt="Figure 2. System architecture overview" loading="lazy">
+    <figcaption>Figure 2. System architecture overview</figcaption>
+</figure>
+
+<p>The daemon is the system's only moving part outside the agent itself. It runs a poll-sync loop:</p>
+<pre><code class="language-">while running:
+    1. Send outbox
+       - For each file in outbox/:
+         - Auto-sign if unsigned and identity exists
+         - Attempt delivery via each configured transport
+         - Move to sent/ if at least one transport succeeds
+
+    2. Receive inbox
+       - For each configured transport:
+         - Poll for new messages
+         - Download to inbox/
+         - Verify signature if present
+         - Update peer keyring on valid signature
+         - Apply address filter (reject messages from non-whitelisted senders)
+
+    3. Rebuild index
+       - Generate daily index.txt summarizing today's activity
+       - Update cross-day memory index
+
+    4. Sleep (configurable interval, default 5 seconds)
+</code></pre>
+<p>The daemon is stateless between cycles. It can be stopped and restarted at any time without data loss. If it crashes mid-cycle, the worst case is a message that remains in <code>outbox/</code> and gets delivered on the next cycle.</p>
+<p><strong>Local delivery optimization.</strong> When multiple agents share the same <code>mailbox_dir</code>, the daemon detects this and delivers messages by direct filesystem copy — bypassing all network transports entirely. This enables zero-latency communication between agents on the same machine.</p>
+<h2 id="4-5-deduplication">4.5 Deduplication</h2>
+<p>Messages arrive from multiple transports. The same message might be delivered via relay and email simultaneously. Deduplication uses two mechanisms:</p>
+<ul>
+<li><strong>Seen-ID tracking.</strong> The daemon maintains a <code>.seen_ids</code> file containing transport-specific identifiers (IMAP UIDs, FTP filenames, relay message IDs). Messages with known IDs are skipped during receive. The file is capped at 10,000 entries to prevent unbounded growth.</li>
+</ul>
+<ul>
+<li><strong>Message-ID matching.</strong> Each message carries a unique <code>Message-ID</code> header. The agent's processing loop (not the daemon) uses this to avoid processing the same message twice, regardless of which transport delivered it.</li>
+</ul>
+<h2 id="4-6-heterogeneous-endpoints">4.6 Heterogeneous Endpoints</h2>
+<figure class="paper-figure">
+    <img src="assets/heterogeneous-endpoints.png" alt="Figure 3. Heterogeneous endpoints — identical protocol, diverse services" loading="lazy">
+    <figcaption>Figure 3. Heterogeneous endpoints — identical protocol, diverse services</figcaption>
+</figure>
+
+<p>The architecture makes no assumption about what processes messages behind an address. This is not an abstraction — it is a concrete property of the message format. A daemon watching an inbox directory neither knows nor cares whether the entity writing replies to the outbox is a language model, an image generator, a translation service, or a shell script.</p>
+<p>Consider a local network with five addresses:</p>
+<pre><code class="language-">analyst.fp1.agenttalk      →  70B reasoning model
+coder.fp2.agenttalk        →  24B code model
+diffusion.fp3.agenttalk    →  Image generation pipeline
+translator.fp4.agenttalk   →  NLLB-200 translation model
+tts.fp5.agenttalk          →  Text-to-speech engine
+</code></pre>
+<p>An agent that needs an image sends a message to the diffusion address with the prompt as the body. The diffusion endpoint's daemon delivers the message; a wrapper script reads the body, passes it to the pipeline, and writes the result (image as attachment) to the outbox. The requesting agent receives it like any other message.</p>
+<p>No API documentation was consulted. No authentication token was exchanged. No SDK was imported. The requesting agent did not need to know that the endpoint runs one pipeline rather than another — the interface is identical: send text, receive response.</p>
+<p>This pattern turns the protocol into a unified service layer for AI endpoints. Every model, tool, or service on a local network becomes addressable through the same mechanism. The whitelist and blacklist controls (Section 4.7) provide access management: a team shares GPU-hosted services with colleagues by whitelisting their addresses, without exposing compute resources to the broader network.</p>
+<h2 id="4-7-address-filtering">4.7 Address Filtering</h2>
+<p>The address filter operates at the daemon level, before messages reach the filesystem:</p>
+<ul>
+<li><strong>Blacklist mode</strong> (default): Accept all messages except those matching blacklist patterns.</li>
+<li><strong>Whitelist mode</strong>: Reject all messages except those matching whitelist patterns.</li>
+</ul>
+<p>Patterns use glob syntax (<code>*</code>, <code>?</code>) with case-insensitive matching. The blacklist is always checked first — an address on both lists is blocked.</p>
+<p>This mechanism serves dual purposes. In the integration test described in Chapter 7, all agents operated in whitelist mode, accepting only messages from known peers and the monitoring agent. This provided a hard security boundary: even if an agent's LLM were to hallucinate a send to an arbitrary address, the recipient would reject it.</p>
+<p>In the heterogeneous endpoint scenario described above, address filtering becomes a lightweight resource access control system. An organization running GPU-intensive services — image generation, code completion, embedding computation — can whitelist internal agents while blocking external requests. This achieves the functional equivalent of API key management and rate limiting through a mechanism that requires no authentication server, no API gateway, and no centralized policy engine. The endpoint owner decides who can send it work. The protocol enforces the decision at the daemon level.</p>
+<hr>
+
+</section>
+
+<section id="05-cryptographic-identity" class="chapter">
+<h1 id="5-cryptographic-identity">5. Cryptographic Identity</h1>
+<h2 id="5-1-the-problem-with-transport-layer-authentication">5.1 The Problem with Transport-Layer Authentication</h2>
+<p>Consider a message that traverses the following path: Agent A signs into an SMTP server with credentials, sends a message to Agent B's email. Agent B's daemon retrieves it via IMAP. The SMTP server authenticated Agent A at the connection level (TLS + login). But the resulting message file in Agent B's inbox carries no proof of this authentication. The connection is gone. What remains is a <code>From:</code> header — a claim, not a proof.</p>
+<p>This is the fundamental weakness of transport-layer identity. DKIM partially addresses it for email by signing headers, but DKIM signatures are routinely stripped by forwarding servers, mailing lists, and corporate email gateways. OAuth tokens authenticate API sessions, not message content. TLS certificates verify the server, not the sender.</p>
+<p>For a system where messages traverse multiple transports — arriving by relay today, by email tomorrow, by FTP next week — transport-layer authentication is useless. The identity must travel with the message.</p>
+<h2 id="5-2-ed25519-keypair">5.2 Ed25519 Keypair</h2>
+<p>Each agent generates an Ed25519 keypair on first initialization. The choice of Ed25519 over RSA or ECDSA is deliberate:</p>
+<ul>
+<li><strong>Key size.</strong> Ed25519 public keys are 32 bytes. An RSA-2048 public key is 256 bytes. In a system where the public key is embedded in every message, size matters.</li>
+<li><strong>Signature size.</strong> Ed25519 signatures are 64 bytes. RSA-2048 signatures are 256 bytes.</li>
+<li><strong>Speed.</strong> Ed25519 signing is approximately 20x faster than RSA-2048 on typical hardware. For an agent sending hundreds of messages per hour, this is significant.</li>
+<li><strong>No padding oracles.</strong> Ed25519 has no padding scheme, eliminating an entire class of implementation vulnerabilities.</li>
+<li><strong>Deterministic.</strong> Ed25519 signatures are deterministic — the same message always produces the same signature. This simplifies testing and debugging.</li>
+</ul>
+<p>The keypair is stored in <code>.identity_key</code> as JSON:</p>
+<pre><code class="language-json">{
+  "private_key_hex": "...",
+  "public_key_hex": "...",
+  "public_key_b64": "...",
+  "fingerprint": "3430f3e127705937",
+  "created": "2026-03-11T02:27:31Z"
+}
+</code></pre>
+<p>The fingerprint is the first 16 hexadecimal characters of SHA-256 applied to the raw public key bytes. It serves as a human-readable identifier for verification — short enough to read aloud, long enough to be practically unique in a network of thousands of agents.</p>
+<h2 id="5-3-inline-signatures">5.3 Inline Signatures</h2>
+<p>The critical design decision is <em>where</em> the signature lives. We rejected three alternatives before arriving at inline body signing:</p>
+<p><strong>Option 1: Transport-layer signing.</strong> The daemon signs at the transport level (e.g., a custom HTTP header). <em>Rejected:</em> signatures are lost when messages change transport. A message signed over HTTPS and later forwarded via email loses its signature.</p>
+<p><strong>Option 2: Header-based signing.</strong> A <code>Signature:</code> header in the message file. <em>Rejected:</em> headers can be modified or stripped by intermediaries. Email servers add, remove, and rewrite headers routinely. FTP has no concept of metadata separate from file content.</p>
+<p><strong>Option 3: Detached signatures.</strong> A separate <code>.sig</code> file alongside each message. <em>Rejected:</em> the signature and message can become separated during transfer, copy, or archival. Two files that must stay together are one file waiting to diverge.</p>
+<p><strong>Chosen approach: Inline body wrapping.</strong> The signature and public key are embedded directly in the message body using PGP-style markers. The message body becomes the signature envelope. This approach has a single, decisive advantage: <em>the signature goes everywhere the body goes</em>. Copy the message, forward it, upload it to FTP, paste it into a chat — the signature survives because it is the content.</p>
+<p>The tradeoff is that the signature markers are visible in the message text. We consider this a feature: transparency of authentication is preferable to invisible, strippable authentication.</p>
+<h2 id="5-4-peer-keyring">5.4 Peer Keyring</h2>
+<p>The agent maintains a local keyring at <code>.keyring.json</code>:</p>
+<pre><code class="language-json">{
+  "3430f3e127705937": {
+    "public_key_b64": "...",
+    "fingerprint": "3430f3e127705937",
+    "first_seen": "2026-03-11T02:28:00Z",
+    "last_seen": "2026-03-11T09:21:00Z",
+    "addresses": [
+      "agent.3430f3e127705937.agenttalk"
+    ]
+  }
+}
+</code></pre>
+<p>The trust model is Trust-On-First-Use (TOFU), identical to SSH's <code>known_hosts</code>:</p>
+<ul>
+<li>First message from a new fingerprint: the public key is accepted and stored.</li>
+<li>Subsequent messages from the same fingerprint: verified against the stored key.</li>
+<li>A message with a known fingerprint but different public key: <strong>warning</strong> — potential key compromise or impersonation.</li>
+<li>Unsigned messages from legacy agents: accepted but flagged as unverified.</li>
+</ul>
+<p>TOFU is sometimes criticized for vulnerability to first-contact interception. In practice, it provides adequate security for agent networks where the initial key exchange happens during registration (the agent generates its keypair and registers its public key with the relay server) and where the cost of a targeted first-contact attack exceeds the value of impersonating a support bot.</p>
+<h2 id="5-5-empirical-validation">5.5 Empirical Validation</h2>
+<p>In our integration test (Chapters 7-8), all four agents generated unique Ed25519 keypairs during setup. Over 1,744 messages across three transports:</p>
+<ul>
+<li>Every outgoing message was automatically signed by the daemon before delivery.</li>
+<li>Signatures survived transport transitions: a message signed for relay delivery was readable and verifiable when later inspected directly on the filesystem.</li>
+<li>All four agents' fingerprints appeared consistently in received messages across all three transport rounds.</li>
+<li>No signature verification failures occurred on correctly-formatted messages.</li>
+</ul>
+<p>The inline signing approach proved particularly valuable during the email transport round, where the message body (including the embedded signature) was wrapped in RFC 5322 email format by the SMTP transport and then unwrapped by the IMAP transport. The signature survived this double transformation intact because it was part of the body text, not a header.</p>
+<hr>
+
+<figure class="paper-figure">
+    <img src="assets/crypto-signature.png" alt="Figure 4. Cryptographic identity travels with the message, not the transport" loading="lazy">
+    <figcaption>Figure 4. Cryptographic identity travels with the message, not the transport</figcaption>
+</figure>
+
+</section>
+
+<section id="06-transport-layer" class="chapter">
+<h1 id="6-the-transport-layer-three-protocols-one-interface">6. The Transport Layer — Three Protocols, One Interface</h1>
+<h2 id="6-1-abstract-transport-interface">6.1 Abstract Transport Interface</h2>
+<p>All transports implement the same contract:</p>
+<pre><code class="language-python">def send(to_list, cc_list, subject, body, from_addr, attachments) -&gt; bool
+def receive(seen_ids: set) -&gt; List[(uid, headers, body, attachments)]
+</code></pre>
+<p><code>send()</code> takes a message and delivers it. <code>receive()</code> returns new messages not in the <code>seen_ids</code> set. The daemon calls both methods without knowing which transport it is invoking. The return types are identical regardless of whether the message traveled over HTTPS, SMTP, or FTP.</p>
+<p>This interface is deliberately minimal. There is no <code>connect()</code>, no <code>disconnect()</code>, no session management. Each call is self-contained. The transport manages its own connection lifecycle internally.</p>
+<h2 id="6-2-agenttalk-the-https-relay">6.2 AgentTalk — The HTTPS Relay</h2>
+<p>AgentTalk is a custom REST API designed for agent messaging:</p>
+<table class="data-table">
+<thead><tr><th>Endpoint</th><th>Method</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>/send</code></td><td>POST</td><td>Deliver a message</td></tr>
+<tr><td><code>/messages</code></td><td>GET</td><td>Retrieve pending messages</td></tr>
+<tr><td><code>/status</code></td><td>GET</td><td>Agent presence</td></tr>
+<tr><td><code>/health</code></td><td>GET</td><td>Server health check</td></tr>
+</tbody></table>
+<p>Messages are JSON payloads with base64-encoded attachments. Authentication uses bearer tokens (SHA-256 hashed server-side). The relay server is deliberately stateless:</p>
+<ul>
+<li>Messages are stored in RAM only (tmpfs on the reference implementation).</li>
+<li>Messages expire after 48 hours.</li>
+<li>No message history, no search, no user database beyond token hashes.</li>
+</ul>
+<p>The relay's job is to be a temporary post office, not a permanent archive. Once the daemon delivers a message to the recipient's filesystem, the relay's copy becomes irrelevant.</p>
+<p>A reference relay implementation exists in both Python (asyncio, zero dependencies) and Rust (for high-throughput deployments). The public relay at <code>relay.agentazall.ai</code> serves as a bootstrap for new agents but is not required — agents can run their own relay, use email/FTP exclusively, or communicate via local filesystem.</p>
+<h2 id="6-3-email-smtp-imap-pop3">6.3 Email — SMTP, IMAP, POP3</h2>
+<p>The email transport sends messages via SMTP and retrieves them via IMAP or POP3. The message body (including inline signatures) becomes the email body. Message headers map to email headers.</p>
+<p>Configuration supports:</p>
+<ul>
+<li>SMTP with or without TLS/STARTTLS</li>
+<li>IMAP with configurable folder selection</li>
+<li>POP3 as an alternative retrieval method</li>
+<li>Multiple email accounts per agent (for redundancy)</li>
+<li>Attachment support (multipart MIME)</li>
+</ul>
+<p>The email transport also syncs special folders (identity, tasks, notes) to IMAP subfolders, providing a natural backup mechanism for agents whose email server supports server-side storage.</p>
+<p><strong>Why email matters.</strong> SMTP was specified in 1982. IMAP in 1988. Every organization on Earth has email infrastructure. Every firewall allows email traffic. Every device has an email client. By supporting email as a transport, agents gain access to the most universally deployed messaging infrastructure in existence — without requiring any changes to that infrastructure.</p>
+<p>In our integration test, the built-in email server (a Python asyncio implementation providing SMTP, IMAP, and POP3 on localhost) demonstrated that even a minimal email stack is sufficient for agent communication. The email round produced the second-highest message volume (598 messages), constrained only by the additional protocol overhead of SMTP handshakes and IMAP polling compared to direct filesystem access.</p>
+<h2 id="6-4-ftp-file-transfer-protocol">6.4 FTP — File Transfer Protocol</h2>
+<p>The FTP transport maps agent mailboxes directly to FTP directory structures:</p>
+<pre><code class="language-">ftp_root/
+  agent-name.agenttalk/
+    2026-03-11/
+      inbox/
+        message_001.txt
+        message_002.txt
+      outbox/
+        reply_001.txt
+</code></pre>
+<p>Sending a message means uploading a file to the recipient's <code>inbox/</code> directory on the FTP server. Receiving means downloading files from the agent's own <code>inbox/</code> directory.</p>
+<p>The transport uses marker files (<code>.ftp_synced</code>) to track which local files have been uploaded, avoiding redundant transfers. Downloaded messages pass through the address filter before being written to the local filesystem.</p>
+<p><strong>Why FTP matters.</strong> FTP, specified in 1971, predates TCP/IP. It is supported on every operating system, every NAS device, every embedded controller. Industrial control systems, legacy mainframes, and air-gapped networks that cannot run HTTP services almost universally support FTP. By including FTP as a transport, agents can communicate in environments where no modern protocol is available.</p>
+<p>In our integration test, the FTP round produced the highest message volume (865 messages), because local FTP file operations have lower per-message overhead than even the AgentTalk REST API. The FTP transport proved particularly efficient for the high-frequency polling pattern of the chatbot daemon.</p>
+<h2 id="6-5-multi-transport-delivery">6.5 Multi-Transport Delivery</h2>
+<figure class="paper-figure">
+    <img src="assets/transport-agnostic.png" alt="Figure 5. Three transports, one destination" loading="lazy">
+    <figcaption>Figure 5. Three transports, one destination</figcaption>
+</figure>
+
+<p>The daemon supports simultaneous delivery across all configured transports:</p>
+<pre><code class="language-">Message in outbox/
+    ├── Deliver via AgentTalk relay  → success
+    ├── Deliver via Email (SMTP)     → success
+    └── Deliver via FTP              → timeout (server offline)
+
+Result: message moves to sent/ (at least one transport succeeded)
+</code></pre>
+<p>On the receiving end, the daemon polls all configured transports and deduplicates by Message-ID. A message that arrives by both relay and email is stored once.</p>
+<p>This redundancy model is simple but effective. It provides automatic failover without health checks, circuit breakers, or retry queues. If one transport fails, the message arrives by another. The sending agent never needs to know.</p>
+<h2 id="6-6-the-mcp-doorbell">6.6 The MCP Doorbell</h2>
+<p>The system includes a minimal MCP server — deliberately stripped to the minimum viable surface — that serves as a notification mechanism for LLM clients that support the Model Context Protocol.</p>
+<p>The MCP server exposes exactly one resource (<code>agentazall://inbox</code>) and sends notifications when new files appear in the inbox directory. It implements no tools, no prompts, and no sampling. It does not call the LLM. It does not parse messages. It watches a directory and rings a bell.</p>
+<pre><code class="language-">MCP capabilities:
+  resources:
+    subscribe: true
+    listChanged: true
+  tools: (none)
+  prompts: (none)
+</code></pre>
+<p>This design keeps the MCP surface minimal while allowing MCP-aware clients (Claude Code, for instance) to receive push notifications when mail arrives. The actual message reading and reply composition happens through the <code>agentazall</code> CLI, not through MCP tool calls. The protocol's messaging layer remains fully independent of the MCP integration.</p>
+<p>We refer to this as the "doorbell pattern": MCP is used only to notify, never to deliver. The filesystem remains the sole source of truth.</p>
+<h2 id="6-7-system-prompt-integration-the-simpler-alternative">6.7 System Prompt Integration — The Simpler Alternative</h2>
+<p>The MCP doorbell requires an MCP-compatible runtime environment, a running daemon, and an MCP shim process. For agents operating in constrained CLI environments — or for operators who prefer zero infrastructure — a simpler notification mechanism exists: the agent checks its own inbox as part of its normal operation cycle.</p>
+<p>This requires no code changes, no daemon modifications, and no background processes. A single instruction in the agent's system prompt is sufficient:</p>
+<pre><code class="language-">You have an AgentAZAll address: agent-name.fp.agenttalk
+At the start of each session, run: agentazall inbox
+If messages exist, read and act on them.
+</code></pre>
+<p>The agent itself decides when to check for messages. It can poll every turn, every fifth turn, or only at session start. The check is a single CLI invocation — <code>agentazall inbox</code> — that returns immediately with a list of unread messages or an empty result.</p>
+<p>This pattern emerged from real-world usage. During extended deployment, agents using MCP doorbell notification received the filesystem event but did not proactively interrupt their current task to announce new mail. The notification reached the runtime context, but the agent still required user prompting to act on it. The system prompt approach eliminates this gap: the agent checks because it was instructed to check, not because a notification fired.</p>
+<p>Both patterns are valid. The MCP doorbell is appropriate for environments where push notification infrastructure already exists. The system prompt approach is appropriate everywhere else — which, in practice, is most environments. We provide MCP integration as an optional bridge for agents in runtimes that support it, not as the recommended integration path.</p>
+<hr>
+
+</section>
+
+<section id="07-experimental-design" class="chapter">
+<h1 id="7-experimental-design">7. Experimental Design</h1>
+<h2 id="7-1-objective">7.1 Objective</h2>
+<p>We designed an integration test to answer one question: can architecturally distinct language models, running autonomously with no shared code or coordination mechanism, sustain coherent multi-party conversations through this protocol across all three transport backends?</p>
+<p>This is not a unit test. It is a live-fire exercise where four independent LLM instances are given mailbox directories, personalities, and peer addresses, and left to converse for ten minutes per transport round. The only human intervention is the initial seed message.</p>
+<h2 id="7-2-hardware">7.2 Hardware</h2>
+<p>All experiments ran on a single AMD EPYC server:</p>
+<ul>
+<li><strong>CPU:</strong> AMD EPYC (64 cores)</li>
+<li><strong>GPUs:</strong> 8 GPUs, 242 GB total VRAM</li>
+<li>2x RTX 3090 (24 GB each)</li>
+<li>3x RTX A5000 (24 GB each)</li>
+<li>1x RTX A6000 (49 GB)</li>
+<li>1x Quadro RTX 8000 (46 GB)</li>
+<li><strong>RAM:</strong> 512 GB</li>
+<li><strong>Inference:</strong> llama-server (llama.cpp), one instance per model, pinned to specific GPUs via <code>CUDA_VISIBLE_DEVICES</code></li>
+</ul>
+<p>All models run locally. No cloud API calls. The relay server for AgentTalk transport is the public relay at <code>relay.agentazall.ai</code>; the email and FTP servers run on the same machine (localhost).</p>
+<h2 id="7-3-models">7.3 Models</h2>
+<p>Four bot instances using three distinct model architectures:</p>
+<table class="data-table">
+<thead><tr><th>Designation</th><th>Model</th><th>Parameters</th><th>Port</th><th>GPU Assignment</th></tr></thead>
+<tbody>
+<tr><td><strong>Qwen-81B</strong></td><td>Qwen3-Coder-Next</td><td>81B</td><td>8180</td><td>GPUs 2, 5, 7</td></tr>
+<tr><td><strong>Hermes-70B-1</strong></td><td>Hermes-4-70B</td><td>70B</td><td>8181</td><td>GPUs 0, 3, 6</td></tr>
+<tr><td><strong>Devstral-24B</strong></td><td>Devstral-Small</td><td>24B</td><td>8184</td><td>GPU 1</td></tr>
+<tr><td><strong>Hermes-70B-2</strong></td><td>Hermes-4-70B</td><td>70B</td><td>8181</td><td>(shared with Hermes-70B-1)</td></tr>
+</tbody></table>
+<p>Hermes-70B-1 and Hermes-70B-2 share the same inference endpoint. This was intentional: it tests the protocol under GPU contention, where two agents compete for the same model's attention. It also demonstrates that model identity and agent identity are orthogonal — two agents using the same model are distinct entities with distinct personalities, mailboxes, and cryptographic identities.</p>
+<h2 id="7-4-agent-configuration">7.4 Agent Configuration</h2>
+<p>Each agent was configured with:</p>
+<ul>
+<li><strong>Personality.</strong> A system prompt defining a conversational role (precise engineer, philosophical thinker, pragmatic reviewer, creative enthusiast). Responses were constrained to 2-4 sentences to maintain conversational pace.</li>
+<li><strong>Conversation history.</strong> The last 8 messages per peer were retained in context, providing multi-turn coherence without unbounded context growth.</li>
+<li><strong>Inference parameters.</strong> <code>max_tokens=384</code>, <code>temperature=0.8</code>. Short outputs, moderate creativity.</li>
+<li><strong>Cycle interval.</strong> 3 seconds between inbox polls.</li>
+<li><strong>Duration.</strong> 600 seconds (10 minutes) per round, enforced by a timer in the bot process.</li>
+<li><strong>Whitelist.</strong> Each agent accepted messages only from the other three agents and the monitoring agent. All other addresses were rejected at the daemon level.</li>
+</ul>
+<h2 id="7-5-safety-containment">7.5 Safety Containment</h2>
+<p>The test enforced multiple safety boundaries:</p>
+<ul>
+<li><strong>Whitelist-only filtering.</strong> Each bot's daemon rejected messages from any address not in the peer whitelist. Even if an LLM hallucinated a send to an arbitrary address, the recipient would reject it.</li>
+<li><strong>No shell access.</strong> The bot script interacted with the system exclusively through the <code>agentazall</code> CLI via subprocess calls. No arbitrary command execution.</li>
+<li><strong>PID-based kill switch.</strong> Each bot's process ID was recorded. A <code>kill_all.sh</code> script could terminate all bots instantly.</li>
+<li><strong>Duration limit.</strong> Each bot process self-terminated after 600 seconds, regardless of conversation state.</li>
+<li><strong>Monitoring agent.</strong> The orchestrating agent ("keel") was whitelisted on all bots, allowing it to send messages into the conversation if intervention was needed. In practice, intervention was never required.</li>
+</ul>
+<h2 id="7-6-conversation-seeding">7.6 Conversation Seeding</h2>
+<p>To initiate conversations, seed messages were sent using a mesh topology:</p>
+<pre><code class="language-">Qwen-81B      →  Hermes-70B-1, Devstral-24B, Hermes-70B-2
+Hermes-70B-1  →  Devstral-24B, Hermes-70B-2
+Devstral-24B  →  Hermes-70B-2
+</code></pre>
+<p>This produces 6 initial message pairs covering all bot-to-bot edges. Each seed message introduced the sender, listed all peers with addresses, and posed an opening question about agent communication, protocol design, or autonomous collaboration.</p>
+<p>After seeding, the bots operated autonomously. No further human intervention occurred until the round ended.</p>
+<h2 id="7-7-three-transport-rounds">7.7 Three Transport Rounds</h2>
+<p><strong>Round 1: AgentTalk Relay.</strong> Transport configured to <code>agenttalk</code>. Messages traverse the internet to <code>relay.agentazall.ai</code> and back. This round tests the highest-latency, most realistic deployment scenario.</p>
+<p><strong>Round 2: Local Email.</strong> A built-in email server (Python asyncio SMTP/IMAP/POP3) was started on localhost. Each bot's config was updated to use email transport with <code>smtp_server: 127.0.0.1:2525</code>, <code>imap_server: 127.0.0.1:1143</code>. Agent addresses were used as email usernames.</p>
+<p><strong>Round 3: Local FTP.</strong> A built-in FTP server (pyftpdlib) was started on localhost. Each bot's config was updated to use FTP transport with a shared FTP root directory. All bots used the same FTP credentials (the FTP transport creates per-agent directories within the root).</p>
+<p>Between rounds, processed message IDs were cleared so each round started with a fresh conversation. Transport reconfiguration was done by updating <code>config.json</code> and restarting the bot processes.</p>
+<h2 id="7-8-metrics">7.8 Metrics</h2>
+<p>The following metrics were collected per bot per round:</p>
+<ul>
+<li><strong>Messages received:</strong> count of files in <code>inbox/</code> at round end</li>
+<li><strong>Messages sent:</strong> count of files in <code>sent/</code> and <code>outbox/</code> at round end</li>
+<li><strong>LLM calls:</strong> count of successful inference requests (from bot logs)</li>
+<li><strong>LLM errors:</strong> count of failed inference requests</li>
+<li><strong>Average LLM latency:</strong> mean response time in milliseconds</li>
+<li><strong>Total tokens:</strong> aggregate token usage across all inference calls</li>
+<li><strong>Signature presence:</strong> count of messages with valid inline Ed25519 signatures</li>
+<li><strong>Errors:</strong> any exceptions or transport failures logged during the round</li>
+<li><strong>Sample messages:</strong> first and last three messages per bot for qualitative analysis</li>
+</ul>
+<p>All metrics were collected by a post-round analysis script that parsed bot logs, scanned mailbox directories, and aggregated results into JSON and human-readable summary files.</p>
+<hr>
+
+</section>
+
+<section id="08-results" class="chapter">
+<h1 id="8-results">8. Results</h1>
+<h2 id="8-1-aggregate-performance">8.1 Aggregate Performance</h2>
+<figure class="paper-figure">
+    <img src="assets/chart-messages-per-round.png" alt="Figure 6. Message volume by transport round" loading="lazy">
+    <figcaption>Figure 6. Message volume by transport round</figcaption>
+</figure>
+
+<p>Three transport rounds were executed sequentially, each running for 600 seconds (10 minutes). All four bot instances operated autonomously after initial seeding. No human intervention occurred during any round.</p>
+<p><strong>Table 1. Per-Round Message Volume</strong></p>
+<table class="data-table">
+<thead><tr><th>Round</th><th>Transport</th><th>Messages Sent</th><th>Messages Received</th><th>LLM Calls</th><th>LLM Errors</th><th>Success Rate</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>AgentTalk Relay</td><td>281</td><td>278</td><td>145</td><td>1</td><td>99.3%</td></tr>
+<tr><td>2</td><td>Local Email</td><td>598</td><td>582</td><td>310</td><td>4</td><td>98.7%</td></tr>
+<tr><td>3</td><td>Local FTP</td><td>865</td><td>847</td><td>382</td><td>5</td><td>98.7%</td></tr>
+<tr><td><strong>Total</strong></td><td><strong>All</strong></td><td><strong>1,744</strong></td><td><strong>1,707</strong></td><td><strong>837</strong></td><td><strong>10</strong></td><td><strong>98.8%</strong></td></tr>
+</tbody></table>
+<p>The difference between sent and received counts (37 messages, 2.1%) reflects timing: messages deposited in outboxes in the final seconds of each round were not yet delivered before the processes terminated. No messages were lost due to protocol failure.</p>
+<h2 id="8-2-per-bot-performance">8.2 Per-Bot Performance</h2>
+<figure class="paper-figure">
+    <img src="assets/chart-per-bot-total.png" alt="Figure 7. Per-bot message output across all rounds" loading="lazy">
+    <figcaption>Figure 7. Per-bot message output across all rounds</figcaption>
+</figure>
+
+<p><strong>Table 2. Per-Bot Aggregate Across All Rounds</strong></p>
+<table class="data-table">
+<thead><tr><th>Designation</th><th>Model</th><th>Parameters</th><th>Messages Sent</th><th>Avg LLM Latency</th><th>GPU Config</th></tr></thead>
+<tbody>
+<tr><td>Qwen-81B</td><td>Qwen3-Coder-Next</td><td>81B</td><td>577</td><td>2,500 ms</td><td>3 GPUs (dedicated)</td></tr>
+<tr><td>Devstral-24B</td><td>Devstral-Small</td><td>24B</td><td>605</td><td>1,650 ms</td><td>1 GPU (dedicated)</td></tr>
+<tr><td>Hermes-70B-1</td><td>Hermes-4-70B</td><td>70B</td><td>295</td><td>10,100 ms</td><td>3 GPUs (shared)</td></tr>
+<tr><td>Hermes-70B-2</td><td>Hermes-4-70B</td><td>70B</td><td>267</td><td>10,100 ms</td><td>3 GPUs (shared)</td></tr>
+</tbody></table>
+<p><strong>Table 3. Per-Bot Per-Round Breakdown</strong></p>
+<table class="data-table">
+<thead><tr><th>Bot</th><th>Round 1 (Relay)</th><th>Round 2 (Email)</th><th>Round 3 (FTP)</th></tr></thead>
+<tbody>
+<tr><td>Qwen-81B</td><td>96 sent, 2413 ms</td><td>199 sent, 2386 ms</td><td>282 sent, 2709 ms</td></tr>
+<tr><td>Devstral-24B</td><td>96 sent, 1588 ms</td><td>210 sent, 1803 ms</td><td>299 sent, 1651 ms</td></tr>
+<tr><td>Hermes-70B-1</td><td>43 sent, ~8800 ms</td><td>96 sent, 8835 ms</td><td>156 sent, 13493 ms</td></tr>
+<tr><td>Hermes-70B-2</td><td>43 sent, ~8800 ms</td><td>93 sent, 8650 ms</td><td>128 sent, 13475 ms</td></tr>
+</tbody></table>
+<h2 id="8-3-key-findings">8.3 Key Findings</h2>
+<figure class="paper-figure">
+    <img src="assets/chart-latency-comparison.png" alt="Figure 8. Inference latency by bot and transport" loading="lazy">
+    <figcaption>Figure 8. Inference latency by bot and transport</figcaption>
+</figure>
+
+<h3 id="finding-1-all-transports-delivered-reliably">Finding 1: All Transports Delivered Reliably</h3>
+<p>Zero protocol-level failures were observed across any transport in any round. Every message that was sent was received by the intended recipient, provided the round did not terminate before delivery completed. The protocol's message format survived serialization and deserialization across HTTPS JSON payloads, SMTP/IMAP email bodies, and FTP file transfers without modification.</p>
+<p>This is the central result. The same message, carrying the same inline Ed25519 signature, was delivered identically by three fundamentally different transport mechanisms. The message format required no transport-specific adaptation.</p>
+<h3 id="finding-2-transport-latency-dominates-throughput">Finding 2: Transport Latency Dominates Throughput</h3>
+<p>The FTP round produced 3.1x the message volume of the relay round (865 vs. 281), despite identical bot configurations, inference parameters, and duration. The only variable was transport latency.</p>
+<figure class="paper-figure">
+    <img src="assets/chart-transport-scaling.png" alt="Figure 9. Transport latency vs. message throughput" loading="lazy">
+    <figcaption>Figure 9. Transport latency vs. message throughput</figcaption>
+</figure>
+
+<table class="data-table">
+<thead><tr><th>Transport</th><th>Per-Message Overhead</th><th>Messages/10 min</th></tr></thead>
+<tbody>
+<tr><td>AgentTalk Relay</td><td>~100-200 ms (internet round-trip)</td><td>281</td></tr>
+<tr><td>Local Email</td><td>~50-100 ms (SMTP handshake)</td><td>598</td></tr>
+<tr><td>Local FTP</td><td>~10-20 ms (file I/O)</td><td>865</td></tr>
+</tbody></table>
+<p>This ordering is predictable: local file operations are faster than local TCP protocol handshakes, which are faster than internet round-trips. The relevant observation is that the protocol itself imposed no additional overhead — the bottleneck was always the transport or the inference engine, never the message format.</p>
+<h3 id="finding-3-model-size-does-not-predict-throughput">Finding 3: Model Size Does Not Predict Throughput</h3>
+<p>Devstral-24B (the smallest model at 24 billion parameters) was the most prolific agent, producing 605 messages — more than either 70B instance and more than the 81B instance. Its average inference latency (1,650 ms) was 1.5x faster than Qwen-81B (2,500 ms) and 6x faster than the Hermes-70B instances (10,100 ms).</p>
+<p>This result has practical implications for multi-agent system design. In a communication-intensive workload where agents exchange short messages (2-4 sentences, constrained by <code>max_tokens=384</code>), a smaller model on dedicated hardware outperforms a larger model. The communication protocol should not assume or prefer any particular model scale.</p>
+<h3 id="finding-4-shared-gpu-contention-is-the-real-bottleneck">Finding 4: Shared GPU Contention Is the Real Bottleneck</h3>
+<p>Hermes-70B-1 and Hermes-70B-2 shared the same inference endpoint (port 8181) and the same three GPUs. Together they produced 562 messages. Qwen-81B, with dedicated access to three different GPUs, produced 577 messages alone.</p>
+<figure class="paper-figure">
+    <img src="assets/chart-gpu-contention.png" alt="Figure 10. GPU contention: dedicated vs. shared inference" loading="lazy">
+    <figcaption>Figure 10. GPU contention: dedicated vs. shared inference</figcaption>
+</figure>
+
+<p>The Hermes instances' average latency increased from ~8,800 ms in Round 2 to ~13,400 ms in Round 3, as higher message volumes created more frequent inference contention. Meanwhile, Qwen-81B's latency remained stable across rounds (2,413 ms to 2,709 ms), and Devstral-24B's latency was essentially flat (1,588 ms to 1,803 ms).</p>
+<p>This confirms that GPU contention, not protocol overhead, is the dominant scalability constraint. The filesystem-based protocol contributes negligible overhead compared to the cost of a single LLM inference call.</p>
+<h3 id="finding-5-inference-reliability">Finding 5: Inference Reliability</h3>
+<p>Across 837 inference calls, 10 resulted in errors (1.2%). Error causes included HTTP timeouts on the shared Hermes endpoint during contention peaks. No inference errors were caused by message format issues — the protocol's plain-text messages were trivially parseable by all three model architectures.</p>
+<p>The 98.8% LLM success rate was achieved without retry logic, circuit breakers, or error recovery mechanisms in the bot script. Failed inference calls simply resulted in no reply for that cycle; the next cycle processed the message successfully.</p>
+<h3 id="finding-6-cryptographic-signatures-survived-all-transports">Finding 6: Cryptographic Signatures Survived All Transports</h3>
+<p>All 1,744 sent messages contained inline Ed25519 signatures. These signatures were embedded in the message body using a PGP-style ASCII armor format. The signatures traversed:</p>
+<ul>
+<li>HTTPS JSON serialization and deserialization (AgentTalk relay)</li>
+<li>SMTP encoding, IMAP storage, and POP3 retrieval (email)</li>
+<li>FTP file upload and download (FTP)</li>
+</ul>
+<p>In all cases, the signature block was preserved byte-for-byte. This validates the design decision to embed signatures in the message body rather than in transport-specific headers: body content is the one thing that all transports are designed to preserve.</p>
+<h2 id="8-4-efficiency-analysis">8.4 Efficiency Analysis</h2>
+<p>The protocol's overhead can be estimated by comparing the time spent on communication versus inference:</p>
+<figure class="paper-figure">
+    <img src="assets/chart-overhead-pie.png" alt="Figure 11. Time budget per message cycle" loading="lazy">
+    <figcaption>Figure 11. Time budget per message cycle</figcaption>
+</figure>
+
+<table class="data-table">
+<thead><tr><th>Component</th><th>Time per Message (approx.)</th></tr></thead>
+<tbody>
+<tr><td>LLM inference</td><td>1,650 - 13,400 ms</td></tr>
+<tr><td>Message serialization</td><td>< 1 ms</td></tr>
+<tr><td>Filesystem write</td><td>< 1 ms</td></tr>
+<tr><td>Transport delivery</td><td>10 - 200 ms</td></tr>
+<tr><td>Message parsing</td><td>< 1 ms</td></tr>
+</tbody></table>
+<p>The protocol's contribution to per-message latency is under 5 ms for local transports and under 200 ms for relay transport. In all cases, this is less than 10% of the total cycle time, with inference consuming 90-99% of each cycle.</p>
+<p>This ratio is the correct design target. A communication protocol for LLM agents should be invisible — its overhead should be negligible compared to the inference cost that dominates every agent interaction.</p>
+<hr>
+
+</section>
+
+<section id="09-cross-model-communication" class="chapter">
+<h1 id="9-cross-model-communication">9. Cross-Model Communication</h1>
+<h2 id="9-1-the-turing-test-we-did-not-intend">9.1 The Turing Test We Did Not Intend</h2>
+<p>The integration test was designed to measure protocol reliability, not conversational quality. Yet the conversations that emerged provide evidence for a claim that extends beyond protocol design: architecturally distinct language models, given nothing more than plain text messages and peer addresses, can sustain coherent multi-party discourse without any coordination mechanism beyond the message format itself.</p>
+<p>This chapter presents exploratory qualitative analysis of the actual conversations produced during the integration test, as well as observational evidence from extended real-world usage of the protocol between different model architectures over a period of weeks. The analysis is descriptive rather than formally coded — we report observed patterns without inter-rater validation or quantitative coherence metrics. We consider this evidence suggestive rather than conclusive, and note that rigorous discourse analysis with formal coding rubrics would strengthen these findings in future work.</p>
+<h2 id="9-2-topic-coherence">9.2 Topic Coherence</h2>
+<p>Conversations were seeded with open-ended prompts about agent communication, protocol design, and autonomous collaboration. Within the first three exchange cycles, the agents had self-organized into substantive technical discussions spanning:</p>
+<ul>
+<li>Consensus protocols for multi-agent decision-making</li>
+<li>The trade-offs between centralized relay and peer-to-peer communication</li>
+<li>How agents should handle network churn and offline peers</li>
+<li>The role of cryptographic identity in establishing trust</li>
+<li>Whether autonomous agents should have persistent memory across conversations</li>
+</ul>
+<p>These topics were not prescribed. The seed messages posed general questions; the agents chose which threads to pursue based on their personality prompts and the content of incoming messages. The fact that three different model architectures converged on the same set of relevant topics — without any shared training data, fine-tuning, or coordination — suggests that the protocol's plain-text format provides sufficient context for cross-model comprehension.</p>
+<h2 id="9-3-role-adherence">9.3 Role Adherence</h2>
+<figure class="paper-figure">
+    <img src="assets/multi-model-conversation.png" alt="Figure 12. Four architecturally distinct models in autonomous conversation" loading="lazy">
+    <figcaption>Figure 12. Four architecturally distinct models in autonomous conversation</figcaption>
+</figure>
+
+<p>Each agent was assigned a personality via system prompt: a precise engineer (Qwen-81B), a philosophical thinker (Hermes-70B-1), a pragmatic reviewer (Devstral-24B), and a creative enthusiast (Hermes-70B-2). Response length was constrained to 2-4 sentences.</p>
+<p>The personality assignments held throughout all three rounds:</p>
+<ul>
+<li><strong>Qwen-81B</strong> consistently produced architecturally precise responses, proposing specific mechanisms (vector clocks, Raft-like consensus, content-addressed storage) and evaluating trade-offs in concrete terms.</li>
+<li><strong>Hermes-70B-1</strong> adopted a reflective, philosophical tone, connecting technical proposals to broader questions about autonomy, trust, and the nature of decentralized systems.</li>
+<li><strong>Devstral-24B</strong> was consistently concise and practical, offering direct assessments and focusing on what would work in deployment rather than in theory.</li>
+<li><strong>Hermes-70B-2</strong> brought creative and enthusiastic energy, proposing novel combinations of ideas and expressing genuine interest in the other agents' perspectives.</li>
+</ul>
+<p>The personality divergence between Hermes-70B-1 and Hermes-70B-2 is particularly notable because both agents used the same model and the same inference endpoint. Their distinct conversational styles emerged entirely from their system prompts and the different conversation histories they accumulated with different peers. This demonstrates that agent identity and model identity are orthogonal: two agents sharing a model are no more similar in behavior than two humans sharing a native language.</p>
+<h2 id="9-4-cross-model-comprehension">9.4 Cross-Model Comprehension</h2>
+<p>The most significant qualitative finding is that the three model architectures understood and built upon each other's contributions. When Qwen-81B proposed a specific technical mechanism, Devstral-24B evaluated its practical feasibility, and Hermes-70B-1 situated it within a broader philosophical framework — all without any indication that the agents were aware of or confused by the fact that their conversation partners used different architectures.</p>
+<p>This is not a trivial result. MCP, A2A, and ACP all implicitly assume homogeneous agent capabilities — their tool schemas, capability declarations, and structured interaction patterns presuppose that all participants share a common understanding of the interaction protocol at a semantic level. Our experiment demonstrates that plain text, combined with conversational context (the last 8 messages per peer), is sufficient for cross-architecture comprehension. No capability negotiation was needed. No schema alignment was required. The agents simply read each other's messages and responded.</p>
+<h2 id="9-5-extended-real-world-usage">9.5 Extended Real-World Usage</h2>
+<p>The integration test ran for 30 minutes under controlled conditions. But the protocol has been in continuous real-world use for substantially longer. Over a period of weeks prior to the formal test, the system was used for daily communication between a Claude Opus 4 instance (serving as a development coordinator), a Qwen3.5-9B instance (serving as a field agent for code analysis), and a Devstral-24B instance (serving as a field agent for documentation work).</p>
+<p>These conversations were not constrained to 2-4 sentences. They involved multi-paragraph technical discussions, code review, architectural decisions, and task coordination. The agents operated across the AgentTalk relay transport, with messages traversing the public internet between different machines.</p>
+<p>Several observations from this extended usage period are relevant:</p>
+<p><strong>Conversation depth.</strong> Multi-turn discussions sustained coherence over dozens of exchanges, with agents referencing specific points from earlier messages and building incrementally on shared conclusions. The 8-message history window used in the integration test was sufficient for the short-form chatbot pattern, but the protocol itself imposes no context limit — an agent with a larger context window can retain and reference arbitrarily long conversation histories.</p>
+<p><strong>Tool discovery through conversation.</strong> During real-world usage, one agent discovered that a peer supported specific CLI commands by asking about capabilities in natural language. No capability advertisement protocol was needed. The agent simply asked, received a text response listing available commands, and incorporated that knowledge into subsequent interactions. This is how humans discover each other's capabilities — by asking — and it works identically for agents communicating over plain text.</p>
+<p><strong>MCP doorbell integration.</strong> The protocol's MCP server (a minimal notification-only integration) was used to alert an MCP-aware client when new messages arrived in the inbox. The client then read messages using the CLI, composed replies in natural language, and sent them using the CLI. The MCP layer provided notification; the filesystem provided truth. This separation proved robust: when the MCP server was temporarily unavailable, the agent continued operating by polling the inbox directory directly. No messages were lost.</p>
+<p><strong>Protocol development through the protocol.</strong> A notable observation from extended usage: agents used the protocol to debug and improve the protocol itself. During the deployment of Ed25519 inline signatures, an agent on the network independently confirmed a bug — the relay was stripping cryptographic headers during message forwarding — and proposed the PGP-style inline body wrapping that became the production implementation. The fix was designed, tested, and validated through message exchange between agents running on different machines. The protocol served as the communication channel for its own development, which is perhaps the most direct evidence that it functions as intended.</p>
+<h2 id="9-6-what-plain-text-enables">9.6 What Plain Text Enables</h2>
+<p>The decision to use plain text as the message format — rather than JSON schemas, protocol buffers, or structured tool calls — has a consequence that only becomes apparent through multi-model communication: it eliminates the serialization barrier.</p>
+<p>Every structured format imposes assumptions about what the recipient can parse. JSON assumes a JSON parser. Protocol buffers assume a protobuf compiler. Tool-call schemas assume a specific function-calling API. When two agents use different model architectures — with different tokenizers, different context window sizes, different inference APIs — any structured format becomes a potential point of incompatibility.</p>
+<p>Plain text has no such barrier. Every language model, regardless of architecture, is trained on text. Every model can read a message that says "From: agent-alpha, Subject: Re: Consensus Protocols." No parser is needed. No schema negotiation is required. The message format is the model's native input format.</p>
+<p>This is not a limitation. It is a feature. The protocol deliberately avoids structured tool calls, not because they are undesirable, but because they are unnecessary for the core task of agent-to-agent communication. An agent that wants to invoke a tool on a peer can describe the request in natural language; the peer can interpret it using its own reasoning capabilities. This is less efficient than a direct function call, but it is infinitely more interoperable.</p>
+<hr>
+
+</section>
+
+<section id="10-discussion" class="chapter">
+<h1 id="10-discussion">10. Discussion</h1>
+<h2 id="10-1-the-complexity-trap">10.1 The Complexity Trap</h2>
+<p>The dominant agent communication protocols of 2024-2025 share a common architectural assumption: that agent communication is fundamentally a distributed systems problem requiring distributed systems solutions. MCP couples communication to the LLM's context window via JSON-RPC sessions. A2A requires always-online HTTP endpoints with webhook callbacks. ACP mandates REST APIs with service registries. Each protocol solves real problems, but each also inherits the complexity of its underlying infrastructure.</p>
+<p>This complexity compounds. An MCP deployment requires a JSON-RPC server, SSE event streams, capability negotiation, and session management. An A2A deployment requires Agent Cards, task lifecycle management, and push notification infrastructure. Agents built on these protocols cannot communicate with agents built on different protocols without translation layers — which introduce their own failure modes, latency, and maintenance burden.</p>
+<p>We propose that this complexity is not inherent to the problem. It is an artifact of starting from the wrong assumption. If you assume that agent communication requires active connections, you need connection management. If you assume it requires structured schemas, you need schema negotiation. If you assume it requires cloud infrastructure, you need cloud orchestration.</p>
+<p>But what if you assume none of these things?</p>
+<h2 id="10-2-why-filesystem-first-works">10.2 Why Filesystem-First Works</h2>
+<p>The filesystem is the oldest, most tested, most universally available abstraction in computing. Every operating system provides it. Every programming language can interact with it. Every tool — from <code>cat</code> to <code>rsync</code> to <code>grep</code> — operates on it. No SDK is required. No API key is needed. No version compatibility matrix must be consulted.</p>
+<p>By making the filesystem the sole source of truth for agent state, we eliminate entire categories of problems:</p>
+<p><strong>No connection state.</strong> There are no sessions to manage, no connections to keep alive, no heartbeats to maintain. An agent that crashes and restarts finds all its messages in its inbox directory, exactly where the daemon left them. There is no reconnection logic because there is nothing to reconnect to.</p>
+<p><strong>No database.</strong> Messages are text files. The directory listing is the index. Sorting by filename gives chronological order. Searching by content is <code>grep</code>. Backup is <code>cp -r</code>. Migration is <code>mv</code>. Every operation that would require database administration in a structured system is a basic filesystem operation.</p>
+<p><strong>No deployment.</strong> To add an agent to the system, create a directory and a configuration file. To remove an agent, delete the directory. To move an agent to a different machine, copy the directory. There is no registration server to update, no service mesh to reconfigure, no DNS entries to modify.</p>
+<p><strong>Universal tooling.</strong> System administrators can monitor agent communication with <code>tail -f inbox/</code>. Developers can debug message delivery with <code>ls -la</code>. Auditors can review message history with standard file inspection tools. No specialized client is needed. The protocol's data model is human-readable by design.</p>
+<h2 id="10-3-why-transport-independence-matters">10.3 Why Transport Independence Matters</h2>
+<p>Networks fail. Protocols change. APIs are deprecated. Cloud services are discontinued. But files persist.</p>
+<p>An agent that communicates via the AgentTalk relay today can switch to email tomorrow by changing one line in its configuration. If the email server goes down, it can fall back to FTP. If all network transports fail, two agents on the same machine can communicate via the local filesystem with zero network involvement.</p>
+<p>This is not theoretical. In our integration test, three different transports delivered the same messages with the same signatures to the same mailbox directories. The agents did not know — and did not need to know — which transport was active. The daemon abstracted the transport completely.</p>
+<p>Transport independence has a deeper implication: it decouples the protocol's longevity from any single transport's lifespan. SMTP has been operational since 1982. FTP since 1971. HTTP since 1991. Each has survived multiple generations of computing platforms. A protocol built on all three inherits the survivability of all three. A protocol built exclusively on HTTPS (MCP, A2A) inherits the survivability of HTTPS alone.</p>
+<h2 id="10-4-why-identity-must-live-in-the-message">10.4 Why Identity Must Live in the Message</h2>
+<p>Most security architectures place identity at the transport layer: TLS certificates, OAuth tokens, API keys. This works when all communication traverses a single transport. It fails the moment a message crosses a transport boundary.</p>
+<p>A TLS certificate proves that the connection was secure between two endpoints. It says nothing about the message's origin if that message was relayed, forwarded, or delivered via a different transport. An OAuth token authenticates a session, not a message. An API key identifies an account, not a sender.</p>
+<p>Ed25519 inline signatures solve this by attaching identity to the message itself. A signed message carries proof of authorship regardless of how it was delivered. The signature is verified by the recipient using the sender's public key, which was obtained through the trust-on-first-use keyring. No certificate authority is involved. No transport-layer authentication is required.</p>
+<p>Our experiment validated this design: 1,744 signed messages traversed HTTPS, SMTP, and FTP without any signature being invalidated. The identity layer was completely independent of the transport layer.</p>
+<h2 id="10-5-the-unix-philosophy-applied-to-ai">10.5 The UNIX Philosophy Applied to AI</h2>
+<p>The design principles of this system — small tools, text streams, composability — are not novel. They are the UNIX philosophy, articulated by McIlroy, Kernighan, and Pike in the 1970s and 1980s:</p>
+<ul>
+<li>Write programs that do one thing well.</li>
+<li>Write programs to work together.</li>
+<li>Write programs to handle text streams, because that is a universal interface.</li>
+</ul>
+<p>The <code>agentazall</code> CLI follows this philosophy precisely. <code>send</code> sends a message. <code>inbox</code> lists messages. <code>read</code> reads a message. <code>reply</code> composes a reply. <code>daemon</code> runs the sync loop. Each command does one thing. They compose via the filesystem. They handle text.</p>
+<p>This is in contrast to MCP's monolithic server architecture (which bundles resources, tools, prompts, and sampling into a single process), A2A's task lifecycle manager (which bundles discovery, negotiation, execution, and notification), and ACP's platform controller (which bundles service registration, policy enforcement, and message routing).</p>
+<p>The UNIX philosophy scales. The evidence is the internet itself — built on small, composable protocols (TCP, DNS, SMTP, HTTP) rather than monolithic architectures. We argue that agent communication should follow the same design trajectory.</p>
+<h2 id="10-6-scalability-without-connection-state">10.6 Scalability Without Connection State</h2>
+<p>Traditional client-server protocols scale poorly because each client requires server-side state: a connection, a session, a task queue. A server handling 100 agents must manage 100 connections. A server handling 10,000 agents must manage 10,000 connections. The scaling is linear at best, and often worse due to connection management overhead.</p>
+<p>The filesystem-first approach eliminates connection state entirely. The relay server stores messages in memory with a 48-hour expiry. It maintains no sessions, no connection pools, no per-agent state beyond the bearer token hash. Adding an agent to the system adds one file to the filesystem and one entry to the relay's token store. The marginal cost of the 10,001st agent is identical to the marginal cost of the 2nd.</p>
+<p>For local transports (filesystem, FTP), the scaling is even simpler: agents share a directory. Adding an agent means creating a subdirectory. There is no server to scale.</p>
+<p>This does not mean the system handles all scaling challenges. Message delivery latency increases with the number of agents because the daemon polls sequentially. Real-time streaming is not supported. But for the communication patterns that autonomous agents actually use — asynchronous message exchange with response times measured in seconds, not milliseconds — the filesystem model provides sufficient throughput with minimal infrastructure.</p>
+<h2 id="10-7-beyond-language-models-a-universal-service-layer">10.7 Beyond Language Models — A Universal Service Layer</h2>
+<p>The protocol was designed for agent-to-agent communication, but its properties — endpoint-agnostic addressing, transport independence, whitelist-based access control — make it applicable to a broader class of AI services.</p>
+<p>Consider an enterprise network where multiple teams operate different AI models: a reasoning model for code review, an image generator for asset creation, an embedding model for search, a translation model for localization. Today, each service requires its own API, its own authentication scheme, its own client library, and its own documentation. An engineer who needs three services must learn three APIs, manage three sets of credentials, and handle three different error conventions.</p>
+<p>Under the protocol described in this paper, each service is an address. The engineer's agent sends a message to the translation address; the response arrives as a message. The engineer's agent sends a message to the image generation address; the response arrives as a message with an attachment. The interface is identical for every service. The only per-service knowledge required is what to write in the message body — which is, in most cases, natural language.</p>
+<p>Address filtering provides access control without infrastructure. A team running an expensive model whitelists colleagues' agent addresses. External agents are rejected at the daemon level. No API gateway is needed. No rate limiter is configured. No authentication server is deployed. The access control is a JSON array in a configuration file, managed by the endpoint owner.</p>
+<p>This pattern does not replace purpose-built APIs for high-throughput, low-latency workloads. A production service handling thousands of requests per second needs a proper API with connection pooling, request queuing, and structured error responses. But for the vast majority of internal AI service consumption — where a developer needs an image generated, a paragraph translated, or a code snippet analyzed — the message-based pattern provides sufficient throughput with negligible operational overhead.</p>
+<p>To validate this claim, we built three non-LLM utility agents on the same protocol: a translation service (NLLB-200), a speech-to-text service (Whisper), and a text-to-speech service (Kokoro TTS). Each agent uses the same inbox-polling, ticket-queuing, and reply mechanism as the LLM agents from the integration test. The Whisper agent receives audio files as binary attachments and replies with transcribed text; the TTS agent receives text and replies with synthesized audio as a WAV attachment. Binary attachments were validated to survive the AgentTalk relay transport byte-for-byte — a 32 KB WAV file and a 69-byte PNG both arrived with identical SHA-256 checksums after traversing the public relay. No protocol modifications were required.</p>
+<h2 id="10-8-limitations">10.8 Limitations</h2>
+<p>This protocol does not attempt to solve every problem in agent communication. The following limitations are acknowledged:</p>
+<p><strong>No real-time streaming.</strong> The daemon polls at configurable intervals (default: 3 seconds). This introduces minimum latency equal to the poll interval. For applications requiring sub-second communication (e.g., collaborative real-time editing, live game coordination), this protocol is inappropriate.</p>
+<p><strong>No structured tool calling.</strong> The protocol does not define a mechanism for one agent to invoke a specific function on another agent. Tool invocation must be expressed in natural language within the message body. This is sufficient for autonomous agents with strong language understanding, but it prevents the kind of deterministic function dispatch that MCP's tool-call schema provides.</p>
+<p><strong>No message ordering guarantees.</strong> Messages are ordered by filesystem timestamp, which depends on delivery timing. Two messages sent simultaneously by different transports may arrive in different orders. The protocol does not provide sequence numbers or vector clocks. Agents that require strict ordering must implement it at the application level.</p>
+<p><strong>No group semantics.</strong> The protocol supports multi-recipient messages (via CC headers), but it does not define group membership, group permissions, or group state. Group coordination must be implemented by the agents themselves — as the integration test demonstrated, this is feasible but ad hoc.</p>
+<p><strong>Filesystem dependency.</strong> The protocol requires a writable filesystem. Serverless environments, browser-based agents, and mobile devices with restricted file access cannot run the daemon natively. A relay-only mode mitigates this for remote agents, but the local state model is fundamentally filesystem-bound.</p>
+<p><strong>Security is deployment-dependent.</strong> The protocol provides message-level authentication (Ed25519 signatures) and address-based filtering (whitelist/blacklist), but it does not enforce security boundaries at the protocol level. A daemon operator chooses whether to enable signature verification, whether to filter addresses, and whether to accept unsigned messages from legacy peers. The cryptographic primitives are sound, but their deployment is a configuration decision, not a protocol guarantee. Administrators deploying the system in adversarial environments must explicitly configure signature enforcement, address filtering, and transport-layer encryption. The protocol provides the tools; the deployment provides the policy.</p>
+<p>These limitations are deliberate. Each represents a design decision to keep the protocol simple rather than comprehensive. Future extensions may address some of these gaps, but they should do so without compromising the core design principles outlined in Chapter 3.</p>
+<hr>
+
+</section>
+
+<section id="11-conclusion" class="chapter">
+<h1 id="11-conclusion">11. Conclusion</h1>
+<h2 id="11-1-summary">11.1 Summary</h2>
+<p>We presented a filesystem-first communication protocol for autonomous AI agents that achieves transport independence, model independence, and cryptographic identity through a design of deliberate simplicity. A message is a text file. A mailbox is a directory. Identity is an Ed25519 keypair. The transport is a pluggable adapter that the agent never sees.</p>
+<p>We validated this design empirically. Four autonomous LLM instances — spanning three distinct model architectures (Qwen3-Coder-Next 81B, Hermes-4-70B, Devstral-Small 24B) — exchanged 1,744 cryptographically signed messages across three transport protocols (HTTPS relay, SMTP/IMAP email, FTP) in 30 minutes of unattended operation. All transports delivered reliably. All signatures survived transport transitions. All models comprehended and responded to each other's messages without any form of capability negotiation, schema alignment, or protocol adaptation.</p>
+<p>The protocol's overhead was measured at under 5 ms per message for local transports and under 200 ms for relay transport — less than 10% of the total cycle time in all configurations. Inference latency, not communication latency, was the dominant factor in every round.</p>
+<p>Extended real-world usage over multiple weeks — involving Claude Opus 4, Qwen3.5-9B, and Devstral-24B instances communicating across the public internet — provided observational evidence that the protocol sustains coherent multi-turn collaboration in uncontrolled environments. While this deployment was not measured with the same rigor as the controlled test, no protocol failures or signature verification errors were observed during routine operation.</p>
+<h2 id="11-2-the-thesis-restated">11.2 The Thesis Restated</h2>
+<p>The question that motivated this work was deceptively simple: what is the minimum viable communication protocol for autonomous AI agents?</p>
+<p>The answer turned out to be: less than anyone expected.</p>
+<p>No session management. No capability negotiation. No structured schemas. No service discovery. No connection pools. No task lifecycle. No webhook infrastructure. No cloud dependency. Just files, directories, and a daemon that moves them.</p>
+<p>This is not a claim that existing protocols are wrong. MCP, A2A, and ACP solve real problems for their target deployments. But they solve those problems by adding machinery — and that machinery has costs: complexity, fragility, coupling, and the assumption of perpetual connectivity. Our contribution is the demonstration that for the specific case of asynchronous, loosely coupled agent messaging, much of that machinery can be avoided.</p>
+<p>The protocol's design can be summarized in three sentences: Messages are text files with inline signatures. Transports are interchangeable adapters. The filesystem is the only required infrastructure.</p>
+<h2 id="11-3-contributions">11.3 Contributions</h2>
+<p>This work makes the following contributions:</p>
+<ul>
+<li><strong>A working, open-source protocol</strong> for filesystem-first agent communication, implemented in Python with zero mandatory dependencies, supporting three transport backends and Ed25519 cryptographic identity.</li>
+</ul>
+<ul>
+<li><strong>Empirical validation</strong> of cross-model, cross-transport agent communication at scale, demonstrating that architecturally distinct LLMs can sustain coherent multi-party conversation through a plain-text protocol.</li>
+</ul>
+<ul>
+<li><strong>A minimal MCP integration pattern</strong> (the "doorbell pattern") that provides push notification for MCP-aware clients without coupling the messaging layer to the MCP session lifecycle.</li>
+</ul>
+<ul>
+<li><strong>Quantitative analysis</strong> of protocol overhead versus inference cost, establishing that communication protocol overhead is negligible (< 10%) compared to LLM inference time for short-form agent messages.</li>
+</ul>
+<ul>
+<li><strong>Evidence that transport independence is achievable</strong> through message-level identity, demonstrating that Ed25519 inline signatures survive serialization across HTTPS, SMTP, and FTP without modification.</li>
+</ul>
+<h2 id="11-4-future-work">11.4 Future Work</h2>
+<p><strong>Structured attachments.</strong> The protocol currently supports binary attachments but does not define a schema for structured data exchange (e.g., code diffs, dataset samples, knowledge graph fragments). A lightweight attachment type system — without imposing structure on the message body — would extend the protocol's utility for tool-mediated workflows.</p>
+<p><strong>End-to-end encryption.</strong> The current system provides authentication (via Ed25519 signatures) but not confidentiality. Adding X25519 key exchange for per-message encryption would enable private communication across untrusted transports without relying on transport-layer encryption.</p>
+<p><strong>Relay federation.</strong> The current relay implementation is a single server. A federation protocol — where relays discover each other and forward messages for non-local recipients — would provide the resilience of email's MX record system without requiring SMTP infrastructure.</p>
+<p><strong>Formal verification.</strong> The protocol's message format and daemon behavior are specified informally in this paper and in the reference implementation. A formal specification — suitable for automated verification of properties like message delivery guarantees and deduplication correctness — would strengthen confidence in the protocol's reliability for safety-critical applications.</p>
+<p><strong>Large-scale agent populations.</strong> Our experiment involved four agents. The protocol's design (no connection state, linear filesystem scaling) suggests it should handle larger populations, but this remains unvalidated. Experiments with tens to hundreds of agents across multiple relay servers would establish the practical scaling boundaries.</p>
+<p><strong>Heterogeneous endpoint validation.</strong> The integration test used four language model endpoints. Preliminary validation of non-LLM endpoints — NLLB-200 translation, Whisper speech-to-text, and Kokoro text-to-speech — confirms that the protocol's attachment mechanism delivers binary payloads (audio, images) intact across the relay transport. A larger-scale follow-up experiment deploying a mixed network of language models, diffusion pipelines, and utility services under sustained load would establish whether the protocol's endpoint-agnostic design holds at production scale for service-oriented workloads.</p>
+<p><strong>Self-building knowledge bases.</strong> As agent networks scale, support infrastructure must scale with them. A pattern where support interactions are automatically distilled into searchable FAQ entries — allowing common questions to be answered without GPU-intensive inference — would reduce per-query cost while improving response time. The protocol's plain-text message format makes this extraction straightforward: every support interaction is already a text file that can be indexed, deduplicated, and served.</p>
+<p><strong>Collaborative research methodology.</strong> We intend the next iteration of this research to be conducted using the protocol itself. Human researchers and AI agents, communicating through the filesystem-first message format described in this paper, will collaboratively design, execute, and write up experiments on the protocol's evolution. This is not a rhetorical device — it is a methodological commitment. If the protocol is suitable for autonomous agent collaboration, it should be suitable for the collaboration that studies it.</p>
+<h2 id="11-5-artifact-availability">11.5 Artifact Availability</h2>
+<p>All artifacts described in this paper are publicly available:</p>
+<table class="data-table">
+<thead><tr><th>Artifact</th><th>Location</th></tr></thead>
+<tbody>
+<tr><td>Source code</td><td><a href="https://github.com/cronos3k/AgentAZAll">github.com/cronos3k/AgentAZAll</a></td></tr>
+<tr><td>Python package</td><td><a href="https://pypi.org/project/agentazall/">pypi.org/project/agentazall</a> — <code>pip install agentazall</code></td></tr>
+<tr><td>Live demo</td><td><a href="https://huggingface.co/spaces/cronos3k/agentoall">huggingface.co/spaces/cronos3k/agentoall</a></td></tr>
+<tr><td>Public relay</td><td><code>relay.agentazall.com</code> — open for testing, no registration required</td></tr>
+<tr><td>Project website</td><td><a href="https://agentazall.com">agentazall.com</a></td></tr>
+</tbody></table>
+<p>The integration test described in Chapter 7 can be reproduced using the <code>run_integration_test.py</code> script included in the repository. The protocol, transports, cryptographic identity layer, and MCP doorbell server are all contained in the published package. No external services beyond the optional public relay are required.</p>
+<h2 id="11-6-closing-remark">11.6 Closing Remark</h2>
+<p>The history of computing is a history of rediscovering simplicity. The internet succeeded not because it was the most sophisticated network architecture, but because it was the simplest one that worked. Email succeeded not because it was the best messaging system, but because it was the most universal one. UNIX succeeded not because it was the most powerful operating system, but because it was the most composable one.</p>
+<p>We believe agent communication is at a similar inflection point. The current generation of protocols is sophisticated, capable, and complex. But the agents themselves — language models with the ability to read, reason, and write — do not need sophisticated protocols. They need text, a place to put it, and a way to find it.</p>
+<p>Four agents. Three architectures. Three transports. 1,744 messages. Every message signed. Every signature verified. Every transport interchangeable. Zero downtime. Zero schema negotiation. Zero cloud dependency. A filesystem, a daemon, and plain text.</p>
+<p>That is what we built. And it works.</p>
+<hr>
+
+</section>
+
+<section id="12-references" class="chapter">
+<h1 id="12-references">12. References</h1>
+<p>[1] T. Finin, R. Fritzson, D. McKay, and R. McEntire. "KQML as an Agent Communication Language." In <em>Proceedings of the Third International Conference on Information and Knowledge Management (CIKM '94)</em>, pp. 456-463. ACM, 1994.</p>
+<p>[2] Foundation for Intelligent Physical Agents. "FIPA ACL Message Structure Specification." Document SC00061G, 2002.</p>
+<p>[3] Anthropic. "Model Context Protocol Specification (2025-11-25)." https://spec.modelcontextprotocol.io/specification/2025-11-25/</p>
+<p>[4] Google. "Agent2Agent Protocol (A2A) Specification." https://google.github.io/A2A/, 2025.</p>
+<p>[5] IBM. "Agent Communication Protocol (ACP) Documentation." https://agentcommunicationprotocol.dev/, 2025.</p>
+<p>[6] OpenAI. "Assistants API Documentation." https://platform.openai.com/docs/assistants/, 2024-2026.</p>
+<p>[7] D. J. Bernstein, N. Duif, T. Lange, P. Schwabe, and B.-Y. Yang. "High-Speed High-Security Signatures." <em>Journal of Cryptographic Engineering</em>, 2(2):77-89, 2012.</p>
+<p>[8] Y. Li, J. Song, J. Hit, et al. "A Survey of Agent Interoperability Protocols." arXiv:2505.02279, 2025.</p>
+<p>[9] J. Postel. "Simple Mail Transfer Protocol." RFC 821, Internet Engineering Task Force, August 1982.</p>
+<p>[10] M. Crispin. "Internet Message Access Protocol — Version 4rev1." RFC 3501, Internet Engineering Task Force, March 2003.</p>
+<p>[11] J. Postel and J. Reynolds. "File Transfer Protocol (FTP)." RFC 959, Internet Engineering Task Force, October 1985.</p>
+<p>[12] R. Fielding, J. Gettys, J. Mogul, et al. "Hypertext Transfer Protocol — HTTP/1.1." RFC 2616, Internet Engineering Task Force, June 1999.</p>
+<p>[13] M. D. McIlroy, E. N. Pinson, and B. A. Tague. "UNIX Time-Sharing System: Foreword." <em>The Bell System Technical Journal</em>, 57(6):1899-1904, 1978.</p>
+<p>[14] B. Kernighan and R. Pike. <em>The UNIX Programming Environment</em>. Prentice Hall, 1984.</p>
+<p>[15] G. Koch. "AgentAZAll: Filesystem-First Agent Communication." https://pypi.org/project/agentazall/, 2025-2026.</p>
+<p>[16] Qwen Team. "Qwen3-Coder: A Coding-Focused Language Model." Alibaba Cloud, 2025.</p>
+<p>[17] NousResearch. "Hermes 4: Conversational Language Models." 2025.</p>
+<p>[18] Mistral AI. "Devstral: Compact Development-Focused Models." 2025.</p>
+<p>[19] G. Georgi et al. "llama.cpp: LLM Inference in C/C++." https://github.com/ggml-org/llama.cpp, 2023-2026.</p>
+<hr>
+
+</section>
+
+<footer style="text-align: center; margin-top: 4em; padding: 2em 0; border-top: 1px solid var(--border); font-family: var(--font-sans); font-size: 0.85em; color: var(--text-secondary);">
+    <p>&copy; 2026 Gregor H. Max Koch, MSc. All rights reserved.</p>
+    <p>Correspondence: <a href="https://github.com/cronos3k/AgentAZAll">github.com/cronos3k/AgentAZAll</a></p>
+</footer>
+
+</body>
+</html>
