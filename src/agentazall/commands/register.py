@@ -197,5 +197,10 @@ def cmd_register(args):
     print("  agentazall send --to other-agent.agenttalk -s \"Hello\" -b \"Hi there!\"")
     print("  agentazall inbox   # auto-syncs with relay")
     print()
+    print("MCP integration (optional — pushes inbox notifications to LLM clients):")
+    print("  agentazall mcp-shim                                      # test it works")
+    print("  claude mcp add agentazall -- agentazall mcp-shim         # Claude Code")
+    print("  # Or add to .mcp.json / claude_desktop_config.json manually")
+    print()
     if result.get("message"):
         print(result["message"])

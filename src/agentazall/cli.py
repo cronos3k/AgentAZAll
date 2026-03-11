@@ -264,6 +264,12 @@ def main():
     rr = relay_sub.add_parser("remove", help="Remove a relay server")
     rr.add_argument("--url", required=True, help="Relay server URL to remove")
 
+    # mcp-shim (MCP doorbell — push inbox notifications to LLM clients)
+    sp = sub.add_parser("mcp-shim",
+                         help="MCP stdio server — pushes inbox notifications to LLM clients")
+    sp.add_argument("--poll-interval", type=int, default=5,
+                     help="Seconds between inbox checks (default: 5)")
+
     # server
     sp = sub.add_parser("server", help="Start local servers")
     sp.add_argument("--email", action="store_true", help="Start email server (SMTP/IMAP/POP3)")
@@ -317,6 +323,7 @@ def main():
         "trust-revoke": ("commands.trust_cmd", "cmd_trust_revoke"),
         "trust-bind-local": ("commands.trust_cmd", "cmd_trust_bind_local"),
         "trust-bind-all": ("commands.trust_cmd", "cmd_trust_bind_all"),
+        "mcp-shim": ("mcp_shim", "cmd_mcp_shim"),
         "daemon": ("commands.server", "cmd_daemon"),
         "server": ("commands.server", "cmd_server"),
         "export": ("commands.server", "cmd_export"),
