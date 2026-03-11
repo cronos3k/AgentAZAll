@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.18"
+VERSION = "1.0.19"
 
 # ── well-known agents ────────────────────────────────────────────────────────
 

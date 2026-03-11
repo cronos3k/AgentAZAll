@@ -133,7 +133,17 @@ def cmd_send(args):
         sys.exit(1)
 
     attachments = args.attach or []
-    content, msg_id = format_message(from_a, to_a, subject, body, attachments=attachments)
+
+    # Load signing identity for inline signature
+    from ..identity import load_keypair, public_key_b64 as pk_b64_fn
+    base = agent_base(cfg)
+    kp = load_keypair(base)
+    sk = kp[0] if kp else None
+    pk = pk_b64_fn(kp[1]) if kp else None
+
+    content, msg_id = format_message(from_a, to_a, subject, body,
+                                     attachments=attachments,
+                                     signing_key=sk, public_key_b64=pk)
     outbox = agent_day(cfg, d) / OUTBOX
     fpath = outbox / f"{msg_id}.txt"
 
@@ -194,7 +204,16 @@ def cmd_reply(args):
 
     d = today_str()
     ensure_dirs(cfg, d)
-    content, new_id = format_message(cfg["agent_name"], to_a, subject, body)
+
+    # Load signing identity for inline signature
+    from ..identity import load_keypair, public_key_b64 as pk_b64_fn
+    base = agent_base(cfg)
+    kp = load_keypair(base)
+    sk = kp[0] if kp else None
+    pk = pk_b64_fn(kp[1]) if kp else None
+
+    content, new_id = format_message(cfg["agent_name"], to_a, subject, body,
+                                     signing_key=sk, public_key_b64=pk)
     outbox = agent_day(cfg, d) / OUTBOX
     fpath = outbox / f"{new_id}.txt"
     fpath.write_text(content, encoding="utf-8")
