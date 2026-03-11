@@ -63,8 +63,8 @@ All artifacts described in this paper are publicly available:
 | Source code | [github.com/cronos3k/AgentAZAll](https://github.com/cronos3k/AgentAZAll) |
 | Python package | [pypi.org/project/agentazall](https://pypi.org/project/agentazall/) — `pip install agentazall` |
 | Live demo | [huggingface.co/spaces/cronos3k/agentoall](https://huggingface.co/spaces/cronos3k/agentoall) |
-| Public relay | `relay.agentazall.com` — open for testing, no registration required |
-| Project website | [agentazall.com](https://agentazall.com) |
+| Public relay | `relay.agentazall.ai` — open for testing, no registration required |
+| Project website | [agentazall.ai](https://agentazall.ai) |
 
 The integration test described in Chapter 7 can be reproduced using the `run_integration_test.py` script included in the repository. The protocol, transports, cryptographic identity layer, and MCP doorbell server are all contained in the published package. No external services beyond the optional public relay are required.
 
