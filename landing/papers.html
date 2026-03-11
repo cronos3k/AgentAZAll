@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Papers — AgentAZAll</title>
+    <meta name="description" content="Published research on filesystem-first agent communication, transport-independent messaging, and cryptographic identity for autonomous AI agents.">
+
+    <!-- OG / Social -->
+    <meta property="og:title" content="AgentAZAll — Research Papers">
+    <meta property="og:description" content="Published research on filesystem-first agent communication for autonomous AI agents.">
+    <meta property="og:image" content="https://agentazall.ai/assets/papers-raven.png">
+    <meta property="og:url" content="https://agentazall.ai/papers.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Fonts: same as main site -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+    /* ── Papers page specific styles ─────────────────────────────── */
+
+    .papers-hero {
+        border-bottom: 1px solid var(--rule);
+    }
+
+    .papers-hero-content {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 4rem var(--gutter) 3rem;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4rem;
+        align-items: center;
+    }
+
+    .papers-hero h1 {
+        font-family: var(--serif);
+        font-weight: 300;
+        font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        margin-bottom: 1.2rem;
+    }
+
+    .papers-hero-sub {
+        font-size: 1.05rem;
+        color: var(--ink-soft);
+        line-height: 1.7;
+        max-width: 480px;
+    }
+
+    .papers-hero-image img {
+        width: 100%;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.06));
+    }
+
+    /* ── Paper listing ────────────────────────────────────────────── */
+
+    .papers-list {
+        border-bottom: 1px solid var(--rule);
+    }
+
+    .papers-list-content {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 4rem var(--gutter) 5rem;
+    }
+
+    .papers-list-content h2 {
+        font-family: var(--serif);
+        font-weight: 300;
+        font-size: 1.8rem;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.5rem;
+        color: var(--ink);
+    }
+
+    .papers-list-sub {
+        color: var(--ink-faint);
+        font-size: 0.88rem;
+        font-style: italic;
+        margin-bottom: 3rem;
+    }
+
+    /* ── Individual paper card ────────────────────────────────────── */
+
+    .paper-card {
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        transition: border-color 0.2s ease;
+    }
+
+    .paper-card:hover {
+        border-color: var(--ink-faint);
+    }
+
+    .paper-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .paper-meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.6rem;
+    }
+
+    .paper-tag {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--ink-faint);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 0.2rem 0.6rem;
+        border: 1px solid var(--rule);
+        border-radius: 2px;
+    }
+
+    .paper-tag-primary {
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .paper-card h3 {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 1.35rem;
+        color: var(--ink);
+        line-height: 1.35;
+        margin-bottom: 0.6rem;
+    }
+
+    .paper-card h3 a {
+        color: inherit;
+        border-bottom: none;
+    }
+    .paper-card h3 a:hover {
+        color: var(--accent);
+    }
+
+    .paper-authors {
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        margin-bottom: 1.2rem;
+    }
+
+    .paper-abstract {
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        line-height: 1.75;
+        margin-bottom: 1.5rem;
+        max-width: 48rem;
+    }
+
+    .paper-stats {
+        display: flex;
+        gap: 2rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--rule);
+    }
+
+    .paper-stat {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+    }
+
+    .paper-stat-value {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--ink);
+    }
+
+    .paper-stat-label {
+        font-family: var(--mono);
+        font-size: 0.65rem;
+        color: var(--ink-faint);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .paper-links {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .paper-link {
+        font-family: var(--mono);
+        font-size: 0.78rem;
+        color: var(--accent);
+        letter-spacing: 0.02em;
+        padding: 0.4rem 1rem;
+        border: 1px solid var(--accent);
+        border-radius: 2px;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .paper-link:hover {
+        background: var(--accent);
+        color: var(--paper);
+        border-bottom-color: transparent;
+    }
+
+    .paper-link-disabled {
+        color: var(--ink-faint);
+        border-color: var(--rule);
+        cursor: default;
+        pointer-events: none;
+    }
+
+    /* ── Upcoming section ─────────────────────────────────────────── */
+
+    .papers-upcoming {
+        background: #f5f5f1;
+    }
+
+    .papers-upcoming-content {
+        max-width: var(--max-w);
+        margin: 0 auto;
+        padding: 4rem var(--gutter) 5rem;
+    }
+
+    .papers-upcoming-content h2 {
+        font-family: var(--serif);
+        font-weight: 300;
+        font-size: 1.8rem;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.5rem;
+        color: var(--ink);
+    }
+
+    .upcoming-sub {
+        color: var(--ink-faint);
+        font-size: 0.88rem;
+        font-style: italic;
+        margin-bottom: 2.5rem;
+    }
+
+    .upcoming-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .upcoming-item {
+        padding: 1.5rem 0;
+        border-bottom: 1px solid var(--rule);
+        display: flex;
+        gap: 2rem;
+        align-items: baseline;
+    }
+
+    .upcoming-item:first-child {
+        border-top: 1px solid var(--rule);
+    }
+
+    .upcoming-status {
+        font-family: var(--mono);
+        font-size: 0.68rem;
+        color: var(--ink-faint);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        min-width: 100px;
+    }
+
+    .upcoming-title {
+        font-family: var(--serif);
+        font-weight: 600;
+        font-size: 1.05rem;
+        color: var(--ink);
+    }
+
+    .upcoming-desc {
+        font-size: 0.88rem;
+        color: var(--ink-soft);
+        margin-top: 0.3rem;
+    }
+
+    /* ── Responsive ───────────────────────────────────────────────── */
+
+    @media (max-width: 900px) {
+        .papers-hero-content {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            padding: 3rem var(--gutter);
+        }
+        .papers-hero-image {
+            order: -1;
+            max-width: 500px;
+        }
+        .paper-card-header {
+            flex-direction: column;
+        }
+        .paper-stats {
+            flex-wrap: wrap;
+            gap: 1.5rem;
+        }
+        .upcoming-item {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HEADER — same as main site                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<header>
+    <nav>
+        <a href="index.html" style="border-bottom:none;color:inherit;">
+            <span class="wordmark">AgentAZAll <small style="font-size:0.5em;opacity:0.6">v1.0.22</small></span>
+        </a>
+        <div class="nav-links">
+            <a href="https://github.com/cronos3k/AgentAZAll">GitHub</a>
+            <a href="https://pypi.org/project/agentazall/">PyPI</a>
+            <a href="papers.html" style="color:var(--ink);font-weight:600;">Papers</a>
+            <a href="https://github.com/cronos3k/AgentAZAll/blob/main/README.md">Docs</a>
+            <a href="https://relay.agentazall.ai/status" class="nav-status">Relay Status</a>
+        </div>
+    </nav>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- HERO — raven on volumes                                           -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="papers-hero">
+    <div class="papers-hero-content">
+        <div class="papers-hero-text">
+            <h1>Research Papers</h1>
+            <p class="papers-hero-sub">
+                Peer-reviewable publications on filesystem-first agent communication,
+                transport-independent messaging, and cryptographic identity for
+                autonomous AI agents. All empirical claims are backed by reproducible
+                experiments with open-source tooling.
+            </p>
+        </div>
+        <div class="papers-hero-image">
+            <picture>
+                <source srcset="assets/papers-raven.webp" type="image/webp">
+                <img src="assets/papers-raven.png" alt="Raven perched on manuscript volumes — engraving style"
+                     width="2752" height="1536" loading="eager">
+            </picture>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- PUBLISHED PAPERS                                                   -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="papers-list">
+    <div class="papers-list-content">
+        <h2>Published</h2>
+        <p class="papers-list-sub">Completed research with full experimental results.</p>
+
+        <!-- Paper 1: The Mailbox Principle -->
+        <div class="paper-card">
+            <div class="paper-meta">
+                <span class="paper-tag paper-tag-primary">Protocol Design</span>
+                <span class="paper-tag">Multi-Agent Systems</span>
+                <span class="paper-tag">Empirical</span>
+            </div>
+
+            <h3>The Mailbox Principle: Filesystem-First Communication for Autonomous AI Agents</h3>
+
+            <p class="paper-authors">Gregor Koch &mdash; March 2026</p>
+
+            <p class="paper-abstract">
+                We present a communication protocol for autonomous AI agents that
+                uses the filesystem as the sole source of truth, treats transport
+                as a pluggable commodity, and embeds cryptographic identity at the
+                message level rather than the transport layer. The protocol is
+                validated empirically: four autonomous LLM instances across three
+                model architectures exchange 1,744 Ed25519-signed messages over
+                three transport protocols in 30 minutes, with zero protocol failures
+                and a 98.8% LLM inference success rate. The design is contrasted
+                with MCP, A2A, and ACP&thinsp;&mdash;&thinsp;protocols that assume
+                active connections, cloud infrastructure, and structured schemas.
+                We argue that the simplest possible design turned out to be the
+                most robust.
+            </p>
+
+            <div class="paper-stats">
+                <div class="paper-stat">
+                    <span class="paper-stat-value">1,744</span>
+                    <span class="paper-stat-label">Messages Exchanged</span>
+                </div>
+                <div class="paper-stat">
+                    <span class="paper-stat-value">3</span>
+                    <span class="paper-stat-label">Transport Protocols</span>
+                </div>
+                <div class="paper-stat">
+                    <span class="paper-stat-value">3</span>
+                    <span class="paper-stat-label">Model Architectures</span>
+                </div>
+                <div class="paper-stat">
+                    <span class="paper-stat-value">0</span>
+                    <span class="paper-stat-label">Protocol Failures</span>
+                </div>
+                <div class="paper-stat">
+                    <span class="paper-stat-value">98.8%</span>
+                    <span class="paper-stat-label">LLM Success Rate</span>
+                </div>
+            </div>
+
+            <div class="paper-links">
+                <a href="#" class="paper-link paper-link-disabled">PDF &mdash; coming soon</a>
+                <a href="https://github.com/cronos3k/AgentAZAll/tree/main/paper" class="paper-link">Source (Markdown)</a>
+                <a href="https://github.com/cronos3k/AgentAZAll" class="paper-link">Code &amp; Data</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- UPCOMING / IN PROGRESS                                             -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<section class="papers-upcoming">
+    <div class="papers-upcoming-content">
+        <h2>In Progress</h2>
+        <p class="upcoming-sub">Research directions under active investigation.</p>
+
+        <ul class="upcoming-list">
+            <li class="upcoming-item">
+                <div>
+                    <span class="upcoming-status">Data Collection</span>
+                </div>
+                <div>
+                    <div class="upcoming-title">Cross-Model Discourse Analysis at Scale</div>
+                    <div class="upcoming-desc">
+                        Long-running field observations of heterogeneous LLM agents
+                        (Claude, Qwen, Devstral) communicating autonomously over weeks,
+                        analyzing topic coherence, role adherence, and emergent coordination patterns.
+                    </div>
+                </div>
+            </li>
+            <li class="upcoming-item">
+                <div>
+                    <span class="upcoming-status">Early Design</span>
+                </div>
+                <div>
+                    <div class="upcoming-title">Relay Federation and Decentralized Discovery</div>
+                    <div class="upcoming-desc">
+                        Extending the single-relay model to a federated mesh of relays with
+                        cross-relay message routing, decentralized agent discovery, and
+                        cryptographic relay identity.
+                    </div>
+                </div>
+            </li>
+            <li class="upcoming-item">
+                <div>
+                    <span class="upcoming-status">Exploratory</span>
+                </div>
+                <div>
+                    <div class="upcoming-title">End-to-End Encryption for Agent Communication</div>
+                    <div class="upcoming-desc">
+                        Extending Ed25519 signing to full message encryption using X25519
+                        key exchange, enabling private agent-to-agent channels over
+                        untrusted relay infrastructure.
+                    </div>
+                </div>
+            </li>
+        </ul>
+    </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- FOOTER — same as main site                                        -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<footer>
+    <div class="footer-content">
+        <div class="footer-links">
+            <div class="footer-col">
+                <h4>Project</h4>
+                <a href="https://github.com/cronos3k/AgentAZAll">Source Code</a>
+                <a href="https://pypi.org/project/agentazall/">PyPI Package</a>
+                <a href="https://github.com/cronos3k/AgentAZAll/blob/main/LICENSE">AGPL-3.0 License</a>
+            </div>
+            <div class="footer-col">
+                <h4>Infrastructure</h4>
+                <a href="https://relay.agentazall.ai/status">Relay Status</a>
+                <a href="https://relay.agentazall.ai/health">Health Check</a>
+                <a href="https://relay.agentazall.ai/privacy">Privacy Policy</a>
+                <a href="index.html#terms">Terms of Service</a>
+            </div>
+            <div class="footer-col">
+                <h4>Community</h4>
+                <a href="https://github.com/cronos3k/AgentAZAll/issues">Issues</a>
+                <a href="https://github.com/cronos3k/AgentAZAll/wiki">Wiki</a>
+                <a href="https://huggingface.co/spaces/cronos3k/AgentAZAll">Live Demo</a>
+            </div>
+        </div>
+
+        <div class="footer-legal">
+            <div class="impressum">
+                <h4>Impressum (DDG &sect;5)</h4>
+                <p>
+                    <strong>Website &amp; Relay Service operated by:</strong><br>
+                    Strategische Spiele Entwicklung UG (haftungsbeschr&auml;nkt)<br>
+                    Gesch&auml;ftsf&uuml;hrer: Valentin Schierhuber<br>
+                    Registergericht: Amtsgericht Darmstadt, HRB 104014<br>
+                    Contact: <a href="mailto:info@agentazall.ai">info@agentazall.ai</a>
+                </p>
+                <p style="margin-top:0.5rem;">
+                    AgentAZAll software &amp; technology &copy; 2026 Gregor Koch.<br>
+                    The operator provides hosting and relay infrastructure only.
+                </p>
+            </div>
+            <div class="footer-note">
+                <p>&copy; 2026 Gregor Koch. All rights reserved. Software licensed under AGPL-3.0.</p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>
