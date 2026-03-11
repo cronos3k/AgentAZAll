@@ -1,8 +1,10 @@
 """Tests for agentazall.messages module."""
 
-from agentazall.identity import generate_keypair, public_key_b64
+from agentazall.identity import generate_keypair, public_key_b64, fingerprint_from_b64
 from agentazall.messages import (
     format_message, parse_headers_only, parse_message, verify_message,
+    wrap_signed_body, unwrap_signed_body, SIG_BEGIN, SIG_END,
+    SIG_BLOCK_BEGIN, SIG_BLOCK_END,
 )
 
 
@@ -82,9 +84,34 @@ class TestParseHeadersOnly:
         assert "Body" not in headers
 
 
-class TestSignedMessages:
+class TestInlineSignature:
+    """Tests for PGP-style inline body signatures (v1.0.18+)."""
 
-    def test_format_with_signing(self):
+    def test_wrap_unwrap_roundtrip(self):
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        fp = fingerprint_from_b64(pk_b64)
+        body = "Hello, this is a test message."
+        wrapped = wrap_signed_body(body, sk, pk_b64, fp)
+        assert SIG_BEGIN in wrapped
+        assert SIG_END in wrapped
+        assert SIG_BLOCK_BEGIN in wrapped
+        assert SIG_BLOCK_END in wrapped
+        original, pk, fp_out, sig = unwrap_signed_body(wrapped)
+        assert original == body
+        assert pk == pk_b64
+        assert fp_out == fp
+        assert sig is not None
+
+    def test_unwrap_unsigned_returns_original(self):
+        body = "Just a plain message"
+        original, pk, fp, sig = unwrap_signed_body(body)
+        assert original == body
+        assert pk is None
+        assert fp is None
+        assert sig is None
+
+    def test_format_with_inline_signing(self):
         sk, vk = generate_keypair()
         pk_b64 = public_key_b64(vk)
         content, msg_id = format_message(
@@ -92,8 +119,13 @@ class TestSignedMessages:
             "Hello signed world!",
             signing_key=sk, public_key_b64=pk_b64,
         )
-        assert f"Public-Key: {pk_b64}" in content
-        assert "Signature: " in content
+        # Inline markers should be in body, NOT in headers
+        assert SIG_BEGIN in content
+        assert SIG_BLOCK_BEGIN in content
+        # No header-based crypto (v1.0.17 legacy)
+        lines_before_sep = content.split("\n---\n")[0]
+        assert "Public-Key:" not in lines_before_sep
+        assert "Signature:" not in lines_before_sep
 
     def test_signed_roundtrip_verifies(self, tmp_path):
         sk, vk = generate_keypair()
@@ -117,7 +149,6 @@ class TestSignedMessages:
             "Original body",
             signing_key=sk, public_key_b64=pk_b64,
         )
-        # Tamper with the body
         content = content.replace("Original body", "Tampered body")
         fpath = tmp_path / f"{msg_id}.txt"
         fpath.write_text(content, encoding="utf-8")
@@ -139,5 +170,60 @@ class TestSignedMessages:
         content, _ = format_message(
             "a@l", "b@l", "Nosign", "Body"
         )
-        assert "Public-Key" not in content
-        assert "Signature" not in content
+        assert SIG_BEGIN not in content
+
+    def test_multiline_body_signing(self, tmp_path):
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        body = "Line 1\nLine 2\nLine 3\n\nParagraph 2"
+        content, msg_id = format_message(
+            "a@relay", "b@relay", "Multi",
+            body, signing_key=sk, public_key_b64=pk_b64,
+        )
+        fpath = tmp_path / f"{msg_id}.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, parsed_body = parse_message(fpath)
+        assert verify_message(headers, parsed_body) is True
+        # Unwrap recovers original body
+        original, _, _, _ = unwrap_signed_body(parsed_body)
+        assert original == body
+
+    def test_signature_survives_header_stripping(self):
+        """Simulate relay stripping headers — inline sig still verifiable."""
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        content, msg_id = format_message(
+            "alice@relay", "bob@relay", "Relay Test",
+            "Important message",
+            signing_key=sk, public_key_b64=pk_b64,
+        )
+        # Simulate relay: only the body survives
+        body_only = content.split("\n---\n", 1)[1]
+        result = verify_message({}, body_only)
+        assert result is True
+
+    def test_legacy_header_sig_still_works(self, tmp_path):
+        """v1.0.17 header-based signatures should still verify."""
+        from agentazall.identity import sign_message
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        # Manually construct a v1.0.17-style message with header sigs
+        header_lines = [
+            "From: alice@relay",
+            "To: bob@relay",
+            "Subject: Legacy",
+            "Date: 2026-03-11",
+            "Message-ID: legacy123",
+            "Status: new",
+            f"Public-Key: {pk_b64}",
+        ]
+        body = "Legacy signed body"
+        signable = "\n".join(header_lines) + "\n---\n" + body
+        sig = sign_message(sk, signable)
+        header_lines.append(f"Signature: {sig}")
+        content = "\n".join(header_lines) + "\n\n---\n" + body
+        fpath = tmp_path / "legacy.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, parsed_body = parse_message(fpath)
+        result = verify_message(headers, parsed_body)
+        assert result is True

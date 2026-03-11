@@ -32,7 +32,7 @@ from .helpers import (
 from .index import build_index, build_remember_index
 from .address_filter import should_accept
 from .identity import load_keypair, public_key_b64, Keyring, fingerprint_from_b64
-from .messages import parse_message, verify_message
+from .messages import parse_message, verify_message, unwrap_signed_body, wrap_signed_body
 from .transport_agenttalk import AgentTalkTransport
 from .transport_email import EmailTransport
 from .transport_ftp import FTPTransport
@@ -208,7 +208,8 @@ class Daemon:
                     continue
 
                 # Sign outgoing message if we have an identity and it's unsigned
-                if self.signing_key and not h.get("Signature"):
+                from .messages import SIG_BEGIN
+                if self.signing_key and SIG_BEGIN not in (body or ""):
                     self._sign_outbox_file(mf, h, body)
 
                 to_list = [a.strip() for a in h["To"].split(",") if a.strip()]
@@ -311,31 +312,30 @@ class Daemon:
         return sent_count
 
     def _sign_outbox_file(self, mf: Path, headers: dict, body: str):
-        """Inject Public-Key + Signature headers into an outbox message file."""
-        from .identity import sign_message
-        # Build header lines (preserving order) with Public-Key added
+        """Wrap outbox message body with inline Ed25519 signature."""
+        from .identity import fingerprint_from_b64
+        fp = fingerprint_from_b64(self.pk_b64)
+        signed_body = wrap_signed_body(body, self.signing_key, self.pk_b64, fp)
+
+        # Rewrite file with original headers + signed body
         lines = []
         for k, v in headers.items():
             lines.append(f"{k}: {v}")
-        lines.append(f"Public-Key: {self.pk_b64}")
-
-        # Compute signature over all headers + --- + body
-        signable = "\n".join(lines) + "\n---\n" + body
-        sig = sign_message(self.signing_key, signable)
-        lines.append(f"Signature: {sig}")
-
-        # Rewrite file
-        lines += ["", "---", body]
+        lines += ["", "---", signed_body]
         mf.write_text("\n".join(lines), encoding="utf-8")
 
     def _verify_incoming(self, headers: dict, body: str, sender: str):
         """Verify signature on incoming message, update keyring."""
         result = verify_message(headers, body)
         if result is True:
-            pk = headers.get("Public-Key", "")
-            fp = fingerprint_from_b64(pk)
-            self.keyring.add(fp, pk, sender)
-            log.debug("Verified sig from %s (fp=%s)", sender, fp)
+            # Extract public key from inline body first, then fall back to header
+            _, pk, fp, _ = unwrap_signed_body(body)
+            if not pk:
+                pk = headers.get("Public-Key", "")
+                fp = fingerprint_from_b64(pk) if pk else None
+            if pk and fp:
+                self.keyring.add(fp, pk, sender)
+                log.debug("Verified sig from %s (fp=%s)", sender, fp)
         elif result is False:
             log.warning("INVALID signature from %s — message accepted but untrusted", sender)
         # result is None → unsigned (legacy agent), no action needed
@@ -434,11 +434,6 @@ class Daemon:
                     f"Message-ID: {msg_id}",
                     "Status: new",
                 ]
-                # Preserve crypto headers if present
-                if headers.get("Public-Key"):
-                    lines.append(f"Public-Key: {headers['Public-Key']}")
-                if headers.get("Signature"):
-                    lines.append(f"Signature: {headers['Signature']}")
                 if atts:
                     lines.append(f"Attachments: {', '.join(n for n, _ in atts)}")
                 lines += ["", "---", body]
