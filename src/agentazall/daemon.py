@@ -211,6 +211,8 @@ class Daemon:
                 from .messages import SIG_BEGIN
                 if self.signing_key and SIG_BEGIN not in (body or ""):
                     self._sign_outbox_file(mf, h, body)
+                    # Re-read after signing so we send the signed body
+                    h, body = parse_message(mf)
 
                 to_list = [a.strip() for a in h["To"].split(",") if a.strip()]
                 cc_list = [a.strip() for a in h.get("Cc", "").split(",") if a.strip()]
