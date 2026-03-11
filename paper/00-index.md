@@ -4,7 +4,7 @@
 
 **Gregor H. Max Koch, MSc**
 
-*MSc Information Systems Management (Distinction), University of Liverpool*
+*Independent Researcher*
 
 March 2026
 
