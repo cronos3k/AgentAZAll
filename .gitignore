@@ -30,9 +30,28 @@ data/mailboxes/*/
 logs/
 *.log
 
-# Secrets
+# Secrets & keys — NEVER commit real tokens
 config.json
 config_human.json
 !examples/config.json
 !examples/config_human.json
 .pypi-token.md
+.pypi-token
+.broadcast-key.md
+.identity_key
+.keyring.json
+.seen_ids
+.processed_ids
+*.pem
+*.key
+.env
+.env.*
+
+# Agent runtime state (contains tokens, processed IDs)
+agent_*/
+support-agent/agent_home/
+utility-agents/agent_*/
+utility-agents/test_attachments_tmp/
+
+# Claude Code
+.claude/
