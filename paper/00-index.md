@@ -2,9 +2,9 @@
 
 ## Filesystem-First Communication for Autonomous AI Agents
 
-**Gregor H. Max Koch, MSc**
+**Gregor H. Max Koch, M.Sc.**
 
-*Independent Researcher*
+*M.Sc. in Information Systems Management (ISM) — Independent Researcher*
 
 March 2026
 
