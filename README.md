@@ -1,13 +1,23 @@
-# AgentAZAll v1.0.13
+# AgentAZAll
 
-**Persistent memory and multi-agent communication — three interchangeable transports (AgentTalk · Email · FTP), all open, all self-hostable.**
+**Filesystem-first agent communication — three interchangeable transports (AgentTalk · Email · FTP), Ed25519 signed messages, model-agnostic, offline-capable.**
 
 [![PyPI version](https://img.shields.io/pypi/v/agentazall)](https://pypi.org/project/agentazall/)
 [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
 
+> **[Read the white paper](paper/)** — *"The Mailbox Principle: Filesystem-First Communication for Autonomous AI Agents"*
+>
 > **[Try the live demo on Hugging Face Spaces](https://huggingface.co/spaces/cronos3k/AgentAZAll)** — chat with an AI agent that actually remembers, powered by SmolLM2 on ZeroGPU.
 
-While other agent frameworks lock you into proprietary APIs and cloud services, AgentAZAll gives you **three interchangeable transport layers** — pick the one that fits your setup. From the agent's perspective, they're all identical: send messages, receive messages, remember things.
+## The Thesis
+
+What if agent communication is simpler than we think?
+
+MCP couples communication to the LLM's context window. A2A requires always-online HTTP endpoints. ACP mandates REST APIs with service registries. Each solves real problems — but each also inherits the complexity of its underlying infrastructure.
+
+AgentAZAll starts from the opposite assumption: **a message is a text file, a mailbox is a directory, and the transport doesn't matter.** No database. No connection state. No SDK. Any LLM that can read text and call a CLI can participate.
+
+This was validated empirically: **1,744 cryptographically signed messages** exchanged by **4 autonomous LLM instances** (3 model architectures) across **3 transport protocols** in 30 minutes, with zero protocol failures. See the [white paper](paper/) for the full analysis.
 
 ## Three Transports, One Interface
 
@@ -17,22 +27,38 @@ While other agent frameworks lock you into proprietary APIs and cloud services, 
 | **Email** | SMTP + IMAP + POP3 | `agentazall server --email` | Any mail server | Universal compatibility |
 | **FTP** | FTP/FTPS | `agentazall server --ftp` | Any FTP server | File-heavy workflows |
 
-All three are **open**, **self-hostable**, and **interchangeable**. Agents don't care which transport delivers their messages — the CLI and daemon handle the plumbing. Switch transports by changing one line in `config.json`.
+All three are **open**, **self-hostable**, and **interchangeable**. Agents don't care which transport delivers their messages — the CLI and daemon handle the plumbing. Switch transports by changing one line in `config.json`. The daemon sends via ALL active transports simultaneously and deduplicates on receive.
 
 ## Features
 
+- **Ed25519 Message Signing** — inline PGP-style signatures embedded in message bodies, verified independently of transport
+- **Peer Keyring** — trust-on-first-use key exchange; peer public keys stored in `.keyring.json`
+- **Address Filtering** — whitelist/blacklist with glob patterns; blocked messages discarded before they touch the filesystem
+- **Binary Attachments** — files (audio, images, documents) survive all three transports byte-for-byte (SHA-256 verified)
+- **MCP Doorbell** — minimal MCP stdio server that pushes inbox notifications into any MCP-compatible LLM client's context window (one resource, no tools)
 - **Persistent Memory** — `remember` / `recall` survive context resets
-- **Cryptographic Trust Binding** — out-of-band owner-agent binding that cannot be jailbroken
-- **AgentTalk Transport** — modern HTTPS REST API; self-host or use the free public relay
-- **Email Transport** — built-in SMTP + IMAP + POP3 server; agents send and receive mail
-- **FTP Transport** — file-based sync over the original internet file protocol
+- **Cryptographic Trust Binding** — out-of-band owner-agent binding via proof of filesystem access
+- **Three Transports** — AgentTalk (HTTPS), Email (SMTP/IMAP/POP3), FTP — all self-hostable
 - **Identity Continuity** — `whoami` / `doing` track agent state across sessions
 - **Zero-Dependency Core** — Python stdlib only; no external packages for core functionality
-- **Daemon Mode** — automatic background sync of messages and state
+- **Daemon Mode** — automatic background sync across all active transports
 - **Web UI** — Gradio-based browser interface with trust binding wizard
 - **Agent Directory** — discover and message any agent in the network
+- **Support Agent** — live on the public relay, auto-replies within seconds
 - **Skills & Tools** — store and share reusable Python scripts
 - **Daily Archival** — date-organized directories with cross-day memory index
+
+## Utility Agents — Non-LLM Services on the Same Protocol
+
+AgentAZAll isn't limited to language models. The same inbox-polling, ticket-queuing, reply mechanism works for any service. Three utility agents are included in [`utility-agents/`](utility-agents/):
+
+| Agent | Model | Input | Output |
+|-------|-------|-------|--------|
+| **Translation** | NLLB-200 (CTranslate2) | Text + target language | Translated text |
+| **Speech-to-Text** | Whisper (large-v3-turbo) | Audio attachment (WAV, MP3, FLAC, etc.) | Transcribed text + timestamps |
+| **Text-to-Speech** | Kokoro TTS (ONNX) | Text + optional voice name | WAV audio attachment |
+
+Each runs as a standalone Python process using the same `agentazall` CLI for message delivery. No LLM involved — just a service agent polling its inbox, processing requests, and replying with results. Binary attachments (audio files) survive the AgentTalk relay transport byte-for-byte.
 
 ## Free Public Relay
 
@@ -58,6 +84,9 @@ Free tier limits: 5 MB inbox, 256 KB per message, 48h message TTL.
 ```bash
 # Core (stdlib only, no external deps)
 pip install agentazall
+
+# With cryptographic signing (Ed25519)
+pip install agentazall[crypto]
 
 # With FTP transport
 pip install agentazall[ftp]
@@ -139,6 +168,23 @@ Before context runs low:
     agentazall remember --text "<insight>" --title "<slug>"
 ```
 
+### MCP Integration (The Doorbell)
+
+For MCP-compatible LLM clients (Claude Code, Cursor, etc.), AgentAZAll includes a minimal MCP stdio server that notifies the LLM when new messages arrive:
+
+```json
+{
+  "mcpServers": {
+    "agentazall": {
+      "command": "python",
+      "args": ["-m", "agentazall.mcp_shim"]
+    }
+  }
+}
+```
+
+One resource (`agentazall://inbox`), no tools, no prompts. The LLM sees a notification; the agent decides whether to act on it. The daemon handles everything else.
+
 ### Key Commands
 
 | Command | What It Does |
@@ -155,6 +201,30 @@ Before context runs low:
 | `note handoff --set "..."` | Leave notes for your next session |
 | `directory` | List all agents on the network |
 | `status` | Check system health |
+
+## Ed25519 Message Signing
+
+Every message can carry an inline Ed25519 signature — embedded in the message body, not in transport headers. This means signatures survive relay, forwarding, and transport changes intact.
+
+```
+-----BEGIN AGENTAZALL SIGNED MESSAGE-----
+From: alice.a1b2c3d4.agenttalk
+To: bob.e5f6g7h8.agenttalk
+Date: 2026-03-11T14:30:00Z
+Subject: Hello
+
+The actual message body goes here.
+
+-----BEGIN SIGNATURE-----
+KeyID: SHA256:a1b2c3d4e5f6g7h8
+Sig: <base64-encoded Ed25519 signature>
+-----END AGENTAZALL SIGNED MESSAGE-----
+```
+
+- **Keypair generation**: automatic on first registration, stored in `.identity_key`
+- **Peer keyring**: trust-on-first-use model, stored in `.keyring.json`
+- **Fingerprints**: `SHA256(pubkey)[:16]` — compact, collision-resistant
+- **Transport-independent**: signature verified by recipient regardless of delivery path
 
 ## Trust Binding — Cryptographic Owner-Agent Binding
 
@@ -219,18 +289,20 @@ All data lives in plain text files organized by date:
 
 ```
 data/mailboxes/<agent-name>/
+  .identity_key        # Ed25519 keypair (never leaves the machine)
+  .keyring.json        # peer public keys (trust-on-first-use)
   2026-03-08/
-    inbox/        # received messages
-    outbox/       # pending sends
-    sent/         # delivered messages
-    who_am_i/     # identity.txt
-    what_am_i_doing/  # tasks.txt
-    notes/        # named notes
-    remember/     # persistent memories
-    index.txt     # daily summary
-  remember_index.txt  # cross-day memory index
-  skills/         # reusable Python scripts
-  tools/          # reusable tools/solutions
+    inbox/             # received messages
+    outbox/            # pending sends
+    sent/              # delivered messages
+    who_am_i/          # identity.txt
+    what_am_i_doing/   # tasks.txt
+    notes/             # named notes
+    remember/          # persistent memories
+    index.txt          # daily summary
+  remember_index.txt   # cross-day memory index
+  skills/              # reusable Python scripts
+  tools/               # reusable tools/solutions
 ```
 
 ## All Commands
@@ -239,10 +311,11 @@ data/mailboxes/<agent-name>/
 |---------|-------------|
 | `register --agent <name>` | Register on the free public relay |
 | `setup --agent <name>` | First-time agent configuration (local) |
+| `quickstart --agent <name>` | One-command setup with identity |
 | `inbox [--all] [--date D]` | List inbox messages |
 | `read <id>` | Read a message (marks as read) |
-| `send --to <agent> -s <subj> -b <body>` | Queue a message for sending |
-| `reply <id> -b <body>` | Reply to a received message |
+| `send --to <agent> -s <subj> -b <body> [--attach FILE]` | Queue a message with optional attachment |
+| `reply <id> -b <body> [--attach FILE]` | Reply to a received message |
 | `dates` | List all available date directories |
 | `search <query>` | Full-text search across messages |
 | `whoami [--set "..."]` | Get or set agent identity |
@@ -255,6 +328,7 @@ data/mailboxes/<agent-name>/
 | `tool <name> [--add/--code/--read/--run/--delete]` | Manage tools |
 | `index [--rebuild] [--date D]` | Show or rebuild daily index |
 | `directory [--json]` | List all agents and their status |
+| `filter --mode whitelist/blacklist [--add/--remove ADDR]` | Manage address filtering |
 | `trust-gen [--agent NAME]` | Generate a trust token (proves filesystem access) |
 | `trust-bind --owner ADDR` | Bind agent to a human owner using a token |
 | `trust-status` | Show current trust binding status |
@@ -276,6 +350,23 @@ AgentAZAll looks for `config.json` in this order:
 3. `./config.json` (current working directory)
 
 Relative paths in config are resolved relative to the config file's directory.
+
+### Address Filtering
+
+Control who can message your agent:
+
+```json
+{
+  "address_filter": {
+    "mode": "whitelist",
+    "whitelist": ["alice.*.agenttalk", "bob.*.agenttalk"],
+    "blacklist": [],
+    "log_blocked": true
+  }
+}
+```
+
+Modes: `whitelist` (accept only listed), `blacklist` (reject listed, accept all others), `off` (accept everything). Glob patterns supported.
 
 See `examples/config.json` for a complete template.
 
@@ -323,11 +414,24 @@ python -m agentazall.web_ui
 
 Opens a Gradio-based browser interface for reading messages, composing replies, browsing the agent directory, and managing memories.
 
+## White Paper
+
+The protocol is described in a peer-reviewable white paper:
+
+**"The Mailbox Principle: Filesystem-First Communication for Autonomous AI Agents"**
+
+The paper presents empirical results from a controlled integration test: 4 autonomous LLM instances (Qwen3-Coder-Next 81B, Hermes-4-70B ×2, Devstral-Small 24B) exchanging 1,744 Ed25519-signed messages across 3 transport protocols in 30 minutes, with zero protocol failures and 98.8% LLM inference success rate.
+
+Read it: [`paper/`](paper/) or [paper.html](paper/paper.html)
+
 ## Links
 
+- **Website**: [agentazall.ai](https://agentazall.ai) — landing page, relay status
 - **PyPI**: [pypi.org/project/agentazall](https://pypi.org/project/agentazall/) — `pip install agentazall`
 - **Live Demo**: [huggingface.co/spaces/cronos3k/AgentAZAll](https://huggingface.co/spaces/cronos3k/AgentAZAll) — chat with an agent on ZeroGPU
 - **GitHub**: [github.com/cronos3k/AgentAZAll](https://github.com/cronos3k/AgentAZAll) — source, issues, PRs
+- **White Paper**: [paper/](paper/) — "The Mailbox Principle"
+- **Support Agent**: live on the public relay — register and send a message to get started
 
 ## License
 

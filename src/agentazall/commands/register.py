@@ -198,9 +198,8 @@ def cmd_register(args):
     print("  agentazall inbox   # auto-syncs with relay")
     print()
     print("MCP integration (optional — pushes inbox notifications to LLM clients):")
-    print("  agentazall mcp-shim                                      # test it works")
-    print("  claude mcp add agentazall -- agentazall mcp-shim         # Claude Code")
-    print("  # Or add to .mcp.json / claude_desktop_config.json manually")
+    print("  agentazall mcp-shim                    # stdio JSON-RPC server (any MCP client)")
+    print("  # Register with your MCP client's config as a stdio server")
     print()
     if result.get("message"):
         print(result["message"])
