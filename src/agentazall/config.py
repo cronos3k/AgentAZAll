@@ -5,7 +5,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = "1.0.16"
+VERSION = "1.0.17"
 
 # ── well-known agents ────────────────────────────────────────────────────────
 
@@ -78,6 +78,10 @@ DEFAULT_CONFIG = {
         "whitelist": [],
         "log_blocked": True,
     },
+    # Multi-transport arrays (v1.0.17+)
+    "relays": [],
+    "email_accounts": [],
+    "ftp_servers": [],
 }
 
 
@@ -207,6 +211,9 @@ def load_config(config_path: Path = None) -> dict:
     with open(config_path, encoding="utf-8") as f:
         user = json.load(f)
     cfg = _deep_merge(DEFAULT_CONFIG, user)
+    # Migrate single-transport config to multi-transport arrays
+    from .multi_transport import migrate_config as _migrate
+    cfg = _migrate(cfg)
     _resolve_relative_paths(cfg, config_path.parent.resolve())
     env = os.environ.get("AGENTAZALL_AGENT")
     if env:

@@ -625,6 +625,33 @@ def filter_disallow(addr):
     return run_cli("filter", "--disallow", addr.strip())
 
 
+# ── transports & crypto identity ──────────────────────────────────────────────
+
+def get_crypto_identity():
+    return run_cli("crypto-identity")
+
+
+def get_transport_list():
+    return run_cli("relay", "list")
+
+
+def add_relay_server(url, token, address):
+    if not url or not url.strip():
+        return "Relay URL is required."
+    args = ["relay", "add", "--url", url.strip()]
+    if token and token.strip():
+        args += ["--token", token.strip()]
+    if address and address.strip():
+        args += ["--address", address.strip()]
+    return run_cli(*args)
+
+
+def remove_relay_server(url):
+    if not url or not url.strip():
+        return "Relay URL is required."
+    return run_cli("relay", "remove", "--url", url.strip())
+
+
 # ── build UI ─────────────────────────────────────────────────────────────────
 
 def build_ui():
@@ -734,6 +761,46 @@ def build_ui():
             remote_bind_btn.click(trust_paste_bind,
                                    [remote_agent, remote_owner, remote_token],
                                    remote_bind_output)
+
+        with gr.Tab("Transports"):
+            gr.Markdown("### Cryptographic Identity")
+            gr.Markdown(
+                "Your Ed25519 keypair — one fingerprint that proves you're you, "
+                "across every transport (AgentTalk, Email, FTP)."
+            )
+            crypto_btn = gr.Button("Show Identity", variant="primary")
+            crypto_output = gr.Textbox(label="Ed25519 Identity", lines=5,
+                                        interactive=False)
+            crypto_btn.click(get_crypto_identity, [], crypto_output)
+
+            gr.Markdown("---")
+            gr.Markdown("### Relay Servers")
+            gr.Markdown(
+                "Connect to multiple AgentTalk relay servers for resilience. "
+                "If one goes down, messages flow through the others."
+            )
+            relay_list_btn = gr.Button("List Relays", variant="primary")
+            relay_list_output = gr.Textbox(label="Configured Relays", lines=8,
+                                            interactive=False)
+            relay_list_btn.click(get_transport_list, [], relay_list_output)
+
+            gr.Markdown("### Add Relay")
+            with gr.Row():
+                relay_url = gr.Textbox(label="Relay URL",
+                                        placeholder="https://relay.example.com:8443")
+                relay_token = gr.Textbox(label="API Token (optional)")
+                relay_address = gr.Textbox(label="Address on relay (optional)")
+            relay_add_btn = gr.Button("Add Relay", variant="primary")
+            relay_add_output = gr.Textbox(label="Result", lines=3, interactive=False)
+            relay_add_btn.click(add_relay_server,
+                                [relay_url, relay_token, relay_address],
+                                relay_add_output)
+
+            gr.Markdown("### Remove Relay")
+            relay_rm_url = gr.Textbox(label="Relay URL to remove")
+            relay_rm_btn = gr.Button("Remove Relay")
+            relay_rm_output = gr.Textbox(label="Result", lines=2, interactive=False)
+            relay_rm_btn.click(remove_relay_server, [relay_rm_url], relay_rm_output)
 
         with gr.Tab("Inbox"):
             with gr.Row():

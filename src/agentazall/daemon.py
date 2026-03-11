@@ -31,7 +31,8 @@ from .helpers import (
 )
 from .index import build_index, build_remember_index
 from .address_filter import should_accept
-from .messages import parse_message
+from .identity import load_keypair, public_key_b64, Keyring, fingerprint_from_b64
+from .messages import parse_message, verify_message
 from .transport_agenttalk import AgentTalkTransport
 from .transport_email import EmailTransport
 from .transport_ftp import FTPTransport
@@ -46,9 +47,72 @@ class Daemon:
         self.use_email = transport in ("email", "both")
         self.use_ftp = transport in ("ftp", "both")
         self.use_agenttalk = transport == "agenttalk"
-        self.email = EmailTransport(cfg) if self.use_email else None
-        self.ftp = FTPTransport(cfg) if self.use_ftp else None
-        self.agenttalk = AgentTalkTransport(cfg) if self.use_agenttalk else None
+
+        # Build transport arrays from migrated config
+        self.email_transports = []
+        self.relay_transports = []
+        self.ftp_transports = []
+
+        # Email: one instance per configured account
+        if self.use_email:
+            for acct in cfg.get("email_accounts", []):
+                tcfg = dict(cfg)
+                tcfg["email"] = acct
+                self.email_transports.append(EmailTransport(tcfg))
+            # Fallback to legacy single config
+            if not self.email_transports:
+                self.email_transports.append(EmailTransport(cfg))
+
+        # AgentTalk relays: one instance per relay
+        for relay in cfg.get("relays", []):
+            tcfg = dict(cfg)
+            tcfg["agenttalk"] = {
+                "server": relay.get("server", ""),
+                "token": relay.get("token", ""),
+            }
+            self.relay_transports.append(AgentTalkTransport(tcfg))
+        # Fallback to legacy single config
+        if not self.relay_transports and self.use_agenttalk:
+            self.relay_transports.append(AgentTalkTransport(cfg))
+
+        # FTP: one instance per server
+        if self.use_ftp:
+            for srv in cfg.get("ftp_servers", []):
+                tcfg = dict(cfg)
+                tcfg["ftp"] = srv
+                self.ftp_transports.append(FTPTransport(tcfg))
+            if not self.ftp_transports:
+                self.ftp_transports.append(FTPTransport(cfg))
+
+        # Legacy single-instance aliases (used by existing send/receive code)
+        self.email = self.email_transports[0] if self.email_transports else None
+        self.ftp = self.ftp_transports[0] if self.ftp_transports else None
+        self.agenttalk = self.relay_transports[0] if self.relay_transports else None
+
+        # Update flags if we have transports from arrays
+        if self.relay_transports and not self.use_agenttalk:
+            self.use_agenttalk = True
+
+        total = len(self.email_transports) + len(self.relay_transports) + len(self.ftp_transports)
+        log.info("Transports: %d email, %d relay, %d ftp (%d total)",
+                 len(self.email_transports), len(self.relay_transports),
+                 len(self.ftp_transports), total)
+
+        # Ed25519 signing identity
+        base = agent_base(cfg)
+        kp = load_keypair(base)
+        if kp:
+            self.signing_key, self.verify_key = kp
+            self.pk_b64 = public_key_b64(self.verify_key)
+            log.info("Crypto identity loaded: %s", fingerprint_from_b64(self.pk_b64))
+        else:
+            self.signing_key = None
+            self.verify_key = None
+            self.pk_b64 = None
+            log.warning("No Ed25519 identity — messages will be unsigned")
+
+        # Peer keyring
+        self.keyring = Keyring(base)
 
     def run(self, once=False):
         agent = self.cfg["agent_name"]
@@ -70,8 +134,11 @@ class Daemon:
         except KeyboardInterrupt:
             pass
         finally:
-            if self.email:
-                self.email.imap_disconnect()
+            for et in self.email_transports:
+                try:
+                    et.imap_disconnect()
+                except Exception:
+                    pass
             log.info("Daemon stopped")
 
     def _cycle(self):
@@ -83,21 +150,30 @@ class Daemon:
         if sent:
             changed.add(today_str())
 
-        # 2. Receive inbox
-        if self.use_email:
-            rx = self._email_receive()
-            if rx:
-                changed.add(today_str())
-        if self.use_ftp:
-            seen = load_seen(self.cfg)
-            rx = self.ftp.fetch_inbox(self.cfg, seen)
-            if rx:
-                save_seen(self.cfg, seen)
-                changed.add(today_str())
-        if self.use_agenttalk:
-            rx = self._agenttalk_receive()
-            if rx:
-                changed.add(today_str())
+        # 2. Receive inbox — iterate all transport instances
+        for et in self.email_transports:
+            try:
+                rx = self._email_receive_from(et)
+                if rx:
+                    changed.add(today_str())
+            except Exception:
+                log.exception("Email receive error")
+        for ft in self.ftp_transports:
+            try:
+                seen = load_seen(self.cfg)
+                rx = ft.fetch_inbox(self.cfg, seen)
+                if rx:
+                    save_seen(self.cfg, seen)
+                    changed.add(today_str())
+            except Exception:
+                log.exception("FTP receive error")
+        for rt in self.relay_transports:
+            try:
+                rx = self._agenttalk_receive_from(rt)
+                if rx:
+                    changed.add(today_str())
+            except Exception:
+                log.exception("AgentTalk receive error")
 
         # 3. Sync special folders
         if self.use_email and self.cfg["email"].get("sync_special_folders"):
@@ -131,6 +207,10 @@ class Daemon:
                 if not h or not h.get("To"):
                     continue
 
+                # Sign outgoing message if we have an identity and it's unsigned
+                if self.signing_key and not h.get("Signature"):
+                    self._sign_outbox_file(mf, h, body)
+
                 to_list = [a.strip() for a in h["To"].split(",") if a.strip()]
                 cc_list = [a.strip() for a in h.get("Cc", "").split(",") if a.strip()]
                 subject = h.get("Subject", "No Subject")
@@ -140,18 +220,26 @@ class Daemon:
                 ok_email = True
                 ok_ftp = True
 
-                # email transport
-                if self.use_email:
-                    ok_email = self.email.send(
-                        to_list, cc_list, subject, body or "",
-                        agent, att_paths)
+                # email transports (all instances)
+                for et in self.email_transports:
+                    try:
+                        ok_email = et.send(
+                            to_list, cc_list, subject, body or "",
+                            agent, att_paths) and ok_email
+                    except Exception as exc:
+                        log.error("Email send %s: %s", mf.stem[:8], exc)
+                        ok_email = False
 
-                # agenttalk transport
+                # agenttalk relay transports (all instances)
                 ok_agenttalk = True
-                if self.use_agenttalk:
-                    ok_agenttalk = self.agenttalk.send(
-                        to_list, cc_list, subject, body or "",
-                        agent, att_paths)
+                for rt in self.relay_transports:
+                    try:
+                        ok_agenttalk = rt.send(
+                            to_list, cc_list, subject, body or "",
+                            agent, att_paths) and ok_agenttalk
+                    except Exception as exc:
+                        log.error("Relay send %s: %s", mf.stem[:8], exc)
+                        ok_agenttalk = False
 
                 # ftp transport
                 if self.use_ftp:
@@ -212,9 +300,9 @@ class Daemon:
                             shutil.rmtree(str(dest))
                         shutil.move(str(att_dir), str(dest))
                     via = "+".join(filter(None, [
-                        "email" if ok_email and self.use_email else "",
-                        "agenttalk" if ok_agenttalk and self.use_agenttalk else "",
-                        "ftp" if ok_ftp and self.use_ftp else "",
+                        "email" if ok_email and self.email_transports else "",
+                        "agenttalk" if ok_agenttalk and self.relay_transports else "",
+                        "ftp" if ok_ftp and self.ftp_transports else "",
                         "local" if ok_local else ""]))
                     log.info("Sent %s -> %s via %s",
                              mf.stem[:8], ", ".join(to_list), via or "none")
@@ -222,9 +310,39 @@ class Daemon:
 
         return sent_count
 
-    def _email_receive(self) -> int:
+    def _sign_outbox_file(self, mf: Path, headers: dict, body: str):
+        """Inject Public-Key + Signature headers into an outbox message file."""
+        from .identity import sign_message
+        # Build header lines (preserving order) with Public-Key added
+        lines = []
+        for k, v in headers.items():
+            lines.append(f"{k}: {v}")
+        lines.append(f"Public-Key: {self.pk_b64}")
+
+        # Compute signature over all headers + --- + body
+        signable = "\n".join(lines) + "\n---\n" + body
+        sig = sign_message(self.signing_key, signable)
+        lines.append(f"Signature: {sig}")
+
+        # Rewrite file
+        lines += ["", "---", body]
+        mf.write_text("\n".join(lines), encoding="utf-8")
+
+    def _verify_incoming(self, headers: dict, body: str, sender: str):
+        """Verify signature on incoming message, update keyring."""
+        result = verify_message(headers, body)
+        if result is True:
+            pk = headers.get("Public-Key", "")
+            fp = fingerprint_from_b64(pk)
+            self.keyring.add(fp, pk, sender)
+            log.debug("Verified sig from %s (fp=%s)", sender, fp)
+        elif result is False:
+            log.warning("INVALID signature from %s — message accepted but untrusted", sender)
+        # result is None → unsigned (legacy agent), no action needed
+
+    def _email_receive_from(self, transport: EmailTransport) -> int:
         seen = load_seen(self.cfg)
-        msgs = self.email.receive(seen)
+        msgs = transport.receive(seen)
         count = 0
         for uid, headers, body, atts in msgs:
             try:
@@ -282,10 +400,10 @@ class Daemon:
             save_seen(self.cfg, seen)
         return count
 
-    def _agenttalk_receive(self) -> int:
+    def _agenttalk_receive_from(self, transport: AgentTalkTransport) -> int:
         """Fetch messages from AgentTalk relay and save to local inbox."""
         seen = load_seen(self.cfg)
-        msgs = self.agenttalk.receive(seen)
+        msgs = transport.receive(seen)
         count = 0
         for uid, headers, body, atts in msgs:
             try:
@@ -316,6 +434,11 @@ class Daemon:
                     f"Message-ID: {msg_id}",
                     "Status: new",
                 ]
+                # Preserve crypto headers if present
+                if headers.get("Public-Key"):
+                    lines.append(f"Public-Key: {headers['Public-Key']}")
+                if headers.get("Signature"):
+                    lines.append(f"Signature: {headers['Signature']}")
                 if atts:
                     lines.append(f"Attachments: {', '.join(n for n, _ in atts)}")
                 lines += ["", "---", body]
@@ -330,6 +453,9 @@ class Daemon:
                     for fname, data in atts:
                         safe = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '_', fname)
                         (adir / safe).write_bytes(data)
+
+                # Verify Ed25519 signature if present
+                self._verify_incoming(headers, body, sender)
 
                 log.info("AgentTalk recv %s subj=%s",
                          msg_id[:8], headers.get("Subject", "?"))

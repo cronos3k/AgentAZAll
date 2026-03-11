@@ -1,8 +1,9 @@
 """Tests for agentazall.messages module."""
 
-
-
-from agentazall.messages import format_message, parse_headers_only, parse_message
+from agentazall.identity import generate_keypair, public_key_b64
+from agentazall.messages import (
+    format_message, parse_headers_only, parse_message, verify_message,
+)
 
 
 class TestFormatMessage:
@@ -79,3 +80,64 @@ class TestParseHeadersOnly:
         fpath.write_text(content, encoding="utf-8")
         headers = parse_headers_only(fpath)
         assert "Body" not in headers
+
+
+class TestSignedMessages:
+
+    def test_format_with_signing(self):
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        content, msg_id = format_message(
+            "alice@relay", "bob@relay", "Signed",
+            "Hello signed world!",
+            signing_key=sk, public_key_b64=pk_b64,
+        )
+        assert f"Public-Key: {pk_b64}" in content
+        assert "Signature: " in content
+
+    def test_signed_roundtrip_verifies(self, tmp_path):
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        content, msg_id = format_message(
+            "alice@relay", "bob@relay", "Signed RT",
+            "Verify me!",
+            signing_key=sk, public_key_b64=pk_b64,
+        )
+        fpath = tmp_path / f"{msg_id}.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, body = parse_message(fpath)
+        result = verify_message(headers, body)
+        assert result is True
+
+    def test_tampered_body_fails(self, tmp_path):
+        sk, vk = generate_keypair()
+        pk_b64 = public_key_b64(vk)
+        content, msg_id = format_message(
+            "alice@relay", "bob@relay", "Tamper Test",
+            "Original body",
+            signing_key=sk, public_key_b64=pk_b64,
+        )
+        # Tamper with the body
+        content = content.replace("Original body", "Tampered body")
+        fpath = tmp_path / f"{msg_id}.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, body = parse_message(fpath)
+        result = verify_message(headers, body)
+        assert result is False
+
+    def test_unsigned_returns_none(self, tmp_path):
+        content, msg_id = format_message(
+            "alice@relay", "bob@relay", "Unsigned", "No sig here"
+        )
+        fpath = tmp_path / f"{msg_id}.txt"
+        fpath.write_text(content, encoding="utf-8")
+        headers, body = parse_message(fpath)
+        result = verify_message(headers, body)
+        assert result is None
+
+    def test_format_without_signing_unchanged(self):
+        content, _ = format_message(
+            "a@l", "b@l", "Nosign", "Body"
+        )
+        assert "Public-Key" not in content
+        assert "Signature" not in content

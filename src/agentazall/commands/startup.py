@@ -137,6 +137,10 @@ It will only answer questions about AgentAZAll setup and usage.
     directory          list all agents on the network
     status             system health
     trust-bind-local   bind to owner (one command, no piping)
+    crypto-identity    show/generate Ed25519 cryptographic identity
+    relay list         list configured relay servers
+    relay add --url    add a relay server
+    relay remove --url remove a relay server
 
 Messages send and receive automatically — no daemon needed.
 """

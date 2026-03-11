@@ -19,6 +19,7 @@ from pathlib import Path
 
 from ..config import DEFAULT_CONFIG, save_config
 from ..helpers import agent_base, ensure_dirs
+from ..identity import generate_keypair, save_keypair, load_keypair, fingerprint, public_key_b64
 
 DEFAULT_RELAY = "relay.agentazall.ai"
 DEFAULT_PORT = 8443
@@ -151,6 +152,18 @@ def cmd_register(args):
             "allow_memory_sharing": False,
         }, indent=2), encoding="utf-8")
 
+    # ── Ed25519 cryptographic identity ─────────────────────────────────
+    existing = load_keypair(base)
+    if existing:
+        sk, vk = existing
+        fp = fingerprint(vk)
+        print(f"  Using existing Ed25519 identity: {fp}")
+    else:
+        sk, vk = generate_keypair()
+        save_keypair(base, sk)
+        fp = fingerprint(vk)
+        print(f"  Generated Ed25519 identity: {fp}")
+
     # Print results
     agent_address = result.get("agent_address", cfg["agent_name"])
     api_token = result.get("api_token", "")
@@ -158,6 +171,7 @@ def cmd_register(args):
     print()
     print("Registration successful!")
     print(f"  Agent address : {agent_address}")
+    print(f"  Fingerprint   : {fp}")
     print(f"  Protocol      : AgentTalk (HTTPS API)")
     if api_token:
         print(f"  API token     : {api_token}")

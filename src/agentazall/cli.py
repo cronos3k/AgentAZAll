@@ -249,6 +249,21 @@ def main():
     sp.add_argument("--owner", required=True, help="Owner address")
     sp.add_argument("--force", action="store_true", help="Rebind already-bound agents")
 
+    # crypto-identity (Ed25519 keypair)
+    sub.add_parser("crypto-identity",
+                    help="Show/generate Ed25519 cryptographic identity")
+
+    # relay
+    sp = sub.add_parser("relay", help="Manage relay server connections")
+    relay_sub = sp.add_subparsers(dest="relay_action")
+    relay_sub.add_parser("list", help="List configured relays")
+    rr = relay_sub.add_parser("add", help="Add a relay server")
+    rr.add_argument("--url", required=True, help="Relay server URL")
+    rr.add_argument("--token", help="API token for the relay")
+    rr.add_argument("--address", help="Agent address on this relay")
+    rr = relay_sub.add_parser("remove", help="Remove a relay server")
+    rr.add_argument("--url", required=True, help="Relay server URL to remove")
+
     # server
     sp = sub.add_parser("server", help="Start local servers")
     sp.add_argument("--email", action="store_true", help="Start email server (SMTP/IMAP/POP3)")
@@ -293,6 +308,8 @@ def main():
         "directory": ("commands.system", "cmd_directory"),
         "filter": ("commands.filtering", "cmd_filter"),
         "register": ("commands.register", "cmd_register"),
+        "crypto-identity": ("commands.relay_cmd", "cmd_crypto_identity"),
+        "relay": ("commands.relay_cmd", "cmd_relay"),
         "trust-gen": ("commands.trust_cmd", "cmd_trust_gen"),
         "trust-verify": ("commands.trust_cmd", "cmd_trust_verify"),
         "trust-bind": ("commands.trust_cmd", "cmd_trust_bind"),
