@@ -37,6 +37,20 @@ def _quick_sync(cfg):
         log.debug("quick-sync: %s", exc)
 
 
+def _body_preview(body: str, max_lines: int = 3) -> str:
+    """Return the first few non-empty lines of a message body as a preview."""
+    if not body:
+        return "(empty)"
+    from ..messages import unwrap_signed_body, SIG_BEGIN
+    # Unwrap inline signature to show actual content
+    if SIG_BEGIN in body:
+        body, _, _, _ = unwrap_signed_body(body)
+    lines = [ln for ln in body.strip().split("\n") if ln.strip()]
+    preview = lines[:max_lines]
+    suffix = " ..." if len(lines) > max_lines else ""
+    return " | ".join(preview) + suffix
+
+
 def _print_inbox(cfg, d):
     inbox_dir = agent_day(cfg, d) / INBOX
     if not inbox_dir.exists() or not list(inbox_dir.glob("*.txt")):
@@ -46,7 +60,7 @@ def _print_inbox(cfg, d):
     new_count = 0
     print(f"\n=== INBOX {cfg['agent_name']} | {d} ===\n")
     for i, f in enumerate(files, 1):
-        h, _ = parse_message(f)
+        h, body = parse_message(f)
         if not h:
             continue
         st = h.get("Status", "?").upper()
@@ -57,10 +71,16 @@ def _print_inbox(cfg, d):
         print(f"    From: {h.get('From', '?')}")
         print(f"    Subject: {h.get('Subject', '(no subject)')}")
         print(f"    Date: {h.get('Date', '?')}")
+        print(f"    Preview: {_body_preview(body)}")
         print(f"    ID: {h.get('Message-ID', f.stem)}")
         print(f"    Path: {f}")
         print()
     print(f"Total: {len(files)} messages ({new_count} new)")
+    if new_count > 0:
+        print()
+        print(f"NOTE: {new_count} unread message(s). Read ALL new messages before responding."
+              " Use 'agentazall read <ID>' for each, or read the files directly."
+              " Do not skip messages — each may contain important context.")
 
 
 def cmd_inbox(args):
