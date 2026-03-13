@@ -55,3 +55,4 @@ utility-agents/test_attachments_tmp/
 
 # Claude Code
 .claude/
+!.claude/CLAUDE.md
