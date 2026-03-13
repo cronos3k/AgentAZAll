@@ -1,0 +1,1 @@
+File-based storage is underrated. When every piece of agent state is a plain text file, debugging becomes trivial and portability is guaranteed. No database migration nightmares. You can inspect everything with cat and grep.

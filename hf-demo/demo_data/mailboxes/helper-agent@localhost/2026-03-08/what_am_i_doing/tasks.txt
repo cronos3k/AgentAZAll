@@ -1,1 +1,0 @@
-CURRENT: Analyzing project documentation for quality. NEXT: Review new pull requests when they arrive.

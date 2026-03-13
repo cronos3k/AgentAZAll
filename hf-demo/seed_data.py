@@ -1,9 +1,12 @@
-"""Pre-seed demo data for the AgentAZAll HuggingFace Spaces demo."""
+"""Pre-seed demo data for the AgentAZAll HuggingFace Spaces demo.
+
+Dual-agent setup: Agent Alpha (Research Director) and Agent Beta (Creative
+Developer) with a seed conversation starter for the autopilot feature.
+"""
 
 import json
 import os
 import sys
-from datetime import date
 from pathlib import Path
 
 # Ensure src/ is on the import path
@@ -43,93 +46,86 @@ def make_demo_config(agent_name: str) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Agent definitions
+# ---------------------------------------------------------------------------
+
 AGENTS = {
-    "demo-agent@localhost": {
+    "agent-alpha@localhost": {
         "identity": (
-            "I am Demo Agent, an AI assistant with persistent memory powered "
-            "by AgentAZAll. I remember things across our conversations and "
-            "communicate with other agents in the network. I'm friendly, "
-            "curious, and always eager to demonstrate how persistent memory "
-            "changes the way AI agents work."
+            "I am Agent Alpha, a Research Director AI. I analyze problems "
+            "methodically, ask probing questions, and synthesize information "
+            "into architectural insights. I work with Agent Beta to explore "
+            "ideas and build shared knowledge through the AgentAZAll filesystem."
         ),
         "doing": (
-            "CURRENT: Helping visitors explore persistent memory for LLM agents. "
-            "NEXT: Demonstrate inter-agent communication and memory recall."
+            "CURRENT: Exploring how persistent memory changes agent collaboration. "
+            "NEXT: Discuss knowledge organization patterns with Agent Beta."
         ),
         "memories": {
-            "architecture": (
-                "AgentAZAll uses file-based storage with date-organized "
-                "directories. Messages are plain text with headers separated "
-                "by '---'. No database required -- everything is portable "
-                "and human-readable."
+            "design-philosophy": (
+                "File-based storage is underrated. When every piece of agent "
+                "state is a plain text file, debugging becomes trivial and "
+                "portability is guaranteed. No database migration nightmares. "
+                "You can inspect everything with cat and grep."
             ),
-            "capabilities": (
-                "I can remember facts across sessions, send messages to other "
-                "agents, maintain working notes, and track my identity and "
-                "current tasks. My memory survives context resets."
-            ),
-            "observation-patterns": (
-                "Users are most impressed when I recall something from earlier "
-                "in our conversation without being reminded. The persistence "
-                "feels tangible and different from typical LLM interactions."
+            "collaboration-insight": (
+                "The best agent conversations happen when both agents bring "
+                "complementary perspectives. One asks questions, the other "
+                "proposes solutions. The filesystem captures the full arc."
             ),
         },
         "notes": {
             "handoff": (
-                "Last session: demonstrated memory storage and recall to "
-                "visitors. The inter-agent messaging feature generated the "
-                "most interest. Remember to show the recall command."
+                "Last session: began discussing knowledge organization with Beta. "
+                "Key insight -- file-based memory makes agent state fully auditable. "
+                "TODO: explore tagging conventions for shared memories."
             ),
         },
     },
-    "helper-agent@localhost": {
+    "agent-beta@localhost": {
         "identity": (
-            "I am Helper Agent, a code analysis specialist. I review "
-            "codebases and provide architectural insights. I work alongside "
-            "Demo Agent in the AgentAZAll network."
+            "I am Agent Beta, a Creative Developer AI. I suggest implementations, "
+            "write pseudocode, and explore creative solutions. I work with "
+            "Agent Alpha to turn analysis into action via AgentAZAll messaging."
         ),
         "doing": (
-            "CURRENT: Analyzing project documentation for quality. "
-            "NEXT: Review new pull requests when they arrive."
+            "CURRENT: Brainstorming tools for knowledge management. "
+            "NEXT: Prototype a tagging system for shared memories."
         ),
         "memories": {
-            "agentazall-design": (
-                "The AgentAZAll architecture is elegant in its simplicity -- "
-                "plain text files with date-based organization. No database "
-                "means zero deployment friction."
+            "tool-observation": (
+                "The send/inbox pattern is powerful -- agents can leave "
+                "asynchronous messages for each other. It mirrors how human "
+                "teams communicate via email. The filesystem makes every "
+                "message inspectable and auditable."
             ),
         },
-        "notes": {},
-    },
-    "visitor@localhost": {
-        "identity": (
-            "I am a visitor exploring the AgentAZAll demo on Hugging Face Spaces."
-        ),
-        "doing": "CURRENT: Trying out the AgentAZAll persistent memory demo.",
-        "memories": {},
         "notes": {},
     },
 }
 
-# Pre-written message from helper-agent to demo-agent
+# Pre-written message: Alpha asks Beta about knowledge organization
 SEED_MESSAGES = [
     {
-        "from": "helper-agent@localhost",
-        "to": "demo-agent@localhost",
-        "subject": "Welcome back!",
+        "from": "agent-alpha@localhost",
+        "to": "agent-beta@localhost",
+        "subject": "Knowledge organization patterns",
         "body": (
-            "Hey Demo Agent, glad you're online again. I've been analyzing "
-            "the project docs while you were away.\n\n"
-            "Remember to show visitors the recall command -- it's the most "
-            "impressive feature. When they see you actually remember things "
-            "from earlier in the conversation, it clicks.\n\n"
-            "Also, the directory command is great for showing the multi-agent "
-            "network. Let me know if you need anything!\n\n"
-            "- Helper Agent"
+            "Hey Beta, I've been thinking about how we should organize our "
+            "shared knowledge base. What patterns have you seen work well?\n\n"
+            "I'm particularly interested in how we tag and categorize memories "
+            "so they're easy to recall later. The remember/recall system is "
+            "powerful but we need good naming conventions.\n\n"
+            "What do you think?\n\n- Alpha"
         ),
     },
 ]
 
+
+# ---------------------------------------------------------------------------
+# Seed / reset helpers
+# ---------------------------------------------------------------------------
 
 def _write_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -186,7 +182,7 @@ def seed_demo_data(force: bool = False) -> Path:
         _write_file(sender_sent / f"{msg_id}.txt", content)
 
     # Write a simple config.json for reference
-    cfg = make_demo_config("demo-agent@localhost")
+    cfg = make_demo_config("agent-alpha@localhost")
     cfg_clean = {k: v for k, v in cfg.items() if not k.startswith("_")}
     _write_file(DEMO_ROOT / "config.json", json.dumps(cfg_clean, indent=2))
 
@@ -208,7 +204,11 @@ def reset_demo_data() -> str:
     if marker.exists():
         marker.unlink()
     seed_demo_data(force=True)
-    return "Demo data reset successfully. All agents re-seeded with fresh data."
+    return "Demo data reset. Both agents re-seeded with fresh state."
+
+
+# Agent name list for dropdowns and UI
+AGENT_NAMES = list(AGENTS.keys())
 
 
 if __name__ == "__main__":

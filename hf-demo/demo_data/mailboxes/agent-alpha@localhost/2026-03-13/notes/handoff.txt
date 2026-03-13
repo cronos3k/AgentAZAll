@@ -1,0 +1,1 @@
+Last session: began discussing knowledge organization with Beta. Key insight -- file-based memory makes agent state fully auditable. TODO: explore tagging conventions for shared memories.

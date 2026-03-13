@@ -1,5 +1,5 @@
 ---
-title: AgentAZAll - Persistent Memory & Multi-Agent Communication
+title: AgentAZAll - Dual-Agent Live Demo
 emoji: "\U0001F9E0"
 colorFrom: indigo
 colorTo: purple
@@ -8,7 +8,7 @@ sdk_version: "5.23.0"
 python_version: "3.12"
 app_file: app.py
 pinned: false
-short_description: "Three transports (AgentTalk, Email, FTP), one interface"
+short_description: "Watch two AI agents collaborate via filesystem in real-time"
 tags:
   - agent
   - memory
@@ -16,25 +16,29 @@ tags:
   - persistent-memory
   - tool-use
   - agenttalk
-  - email
-  - ftp
-  - smtp
-  - rest-api
+  - autopilot
+  - filesystem
 models:
+  - Qwen/Qwen2.5-3B-Instruct
   - HuggingFaceTB/SmolLM2-1.7B-Instruct
 preload_from_hub:
+  - Qwen/Qwen2.5-3B-Instruct
   - HuggingFaceTB/SmolLM2-1.7B-Instruct
 ---
 
-# AgentAZAll — Persistent Memory & Multi-Agent Communication
+# AgentAZAll — Dual-Agent Live Demo
 
-Three transports (**AgentTalk** · **Email** · **FTP**), one interface. Chat with an AI
-agent that actually **remembers** — and communicates with other agents over your choice
-of transport layer. This demo uses
-[SmolLM2-1.7B-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct)
-on ZeroGPU, powered by [AgentAZAll](https://github.com/cronos3k/AgentAZAll).
+Two AI agents (**Qwen2.5-3B** and **SmolLM2-1.7B**) collaborate in real-time using
+[AgentAZAll](https://github.com/cronos3k/AgentAZAll). The center panel shows the
+**raw filesystem** — watch actual files appear as agents send messages, store memories,
+and build shared knowledge. Everything is plain text. No database. No vector store.
 
-No proprietary APIs. No vendor lock-in. Open, self-hostable, interchangeable.
+## What You'll See
+
+- **Left panel**: Agent Alpha (Research Director) — asks probing questions, synthesizes insights
+- **Center panel**: Live filesystem browser showing every file the agents create
+- **Right panel**: Agent Beta (Creative Developer) — proposes implementations, explores ideas
+- **Autopilot button**: Watch both agents have a multi-turn conversation automatically
 
 ## Three Transports, One Interface
 
@@ -46,41 +50,18 @@ No proprietary APIs. No vendor lock-in. Open, self-hostable, interchangeable.
 
 Agents don't care which transport delivers their messages — switch by changing one line in `config.json`.
 
-## What You Can Do
-
-- **Chat** with an agent that stores and recalls memories across messages
-- **Send messages** between agents in a simulated multi-agent network
-- **Browse** the agent dashboard to see memories, inbox, and identity
-- **Watch** the agent use tools in real time (remember, recall, send, inbox)
-
-## Key Features
-
-- **Persistent memory** (`remember` / `recall`) that survives context resets
-- **AgentTalk transport** — modern HTTPS REST API; self-host or use the free public relay
-- **Email transport** (SMTP/IMAP/POP3) — universal agent communication
-- **FTP transport** — file sync over the original internet file protocol
-- **Identity continuity** (`whoami` / `doing`) across sessions
-- **Zero-dependency core** — Python stdlib only
-- **Unlimited local server** — self-hosted AgentTalk has no file size or message limits
-
 ## Quick Start
 
 ```bash
-# Public relay (zero config):
 pip install agentazall
 agentazall register --agent myagent
-
-# Self-host everything:
-agentazall setup --agent my-agent@localhost
-agentazall server --agenttalk     # HTTPS API (port 8484)
-agentazall server --all           # all three transports
 ```
 
 ## Links
 
-- **Install**: `pip install agentazall` — [pypi.org/project/agentazall](https://pypi.org/project/agentazall/)
+- **Project**: [agentazall.ai](https://agentazall.ai) — research paper, documentation
 - **Source**: [github.com/cronos3k/AgentAZAll](https://github.com/cronos3k/AgentAZAll)
-- **This Demo**: [huggingface.co/spaces/cronos3k/AgentAZAll](https://huggingface.co/spaces/cronos3k/AgentAZAll)
+- **Install**: `pip install agentazall` — [pypi.org/project/agentazall](https://pypi.org/project/agentazall/)
 
 ## License
 

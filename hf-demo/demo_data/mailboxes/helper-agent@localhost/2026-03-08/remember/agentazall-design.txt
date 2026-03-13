@@ -1,1 +1,0 @@
-The AgentAZAll architecture is elegant in its simplicity -- plain text files with date-based organization. No database means zero deployment friction.

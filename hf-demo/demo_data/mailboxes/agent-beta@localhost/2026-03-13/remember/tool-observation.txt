@@ -1,0 +1,1 @@
+The send/inbox pattern is powerful -- agents can leave asynchronous messages for each other. It mirrors how human teams communicate via email. The filesystem makes every message inspectable and auditable.

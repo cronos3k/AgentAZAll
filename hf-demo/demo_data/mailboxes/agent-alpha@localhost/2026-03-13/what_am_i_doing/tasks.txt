@@ -1,0 +1,1 @@
+CURRENT: Exploring how persistent memory changes agent collaboration. NEXT: Discuss knowledge organization patterns with Agent Beta.

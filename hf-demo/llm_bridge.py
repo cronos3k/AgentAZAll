@@ -1,9 +1,10 @@
 """LLM <-> AgentAZAll bridge for the HuggingFace Spaces demo.
 
-Connects SmolLM2-1.7B-Instruct to AgentAZAll's persistent memory system
-via regex-parsed tool calls.
+Dual-model setup: Qwen2.5-3B-Instruct (Agent Alpha) and SmolLM2-1.7B-Instruct
+(Agent Beta). Models are loaded at module level for ZeroGPU caching.
 """
 
+import os
 import re
 import sys
 from pathlib import Path
@@ -24,7 +25,9 @@ from agentazall.messages import format_message, parse_headers_only, parse_messag
 
 from seed_data import make_demo_config, MAILBOXES
 
-MODEL_ID = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+# Model IDs
+ALPHA_MODEL_ID = "Qwen/Qwen2.5-3B-Instruct"
+BETA_MODEL_ID = "HuggingFaceTB/SmolLM2-1.7B-Instruct"
 
 # Regex for tool calls: [TOOL: command | arg1 | arg2 | ...]
 TOOL_PATTERN = re.compile(r"\[TOOL:\s*(\w+)(?:\s*\|\s*(.*?))?\]")
@@ -207,7 +210,7 @@ def _tool_directory(cfg: dict, args: list[str]) -> str:
             continue
         name = agent_dir.name
 
-        # Find latest date dir with identity (skip non-date dirs like skills/)
+        # Find latest date dir with identity
         identity = "?"
         doing = "?"
         for date_dir in sorted(agent_dir.iterdir(), reverse=True):
@@ -265,7 +268,7 @@ and show you the result. Then continue your response naturally.
 
 You ARE a persistent agent. Information you [TOOL: remember] will survive across
 conversations. You can message other agents and they can message you back.
-This is not a simulation -- these are real file operations.
+This is not a simulation -- these are real file operations on the filesystem.
 
 YOUR CURRENT STATE:
 Identity: {identity}
@@ -280,8 +283,8 @@ YOUR INBOX:
 AGENTS IN NETWORK:
 {directory}
 
-Respond naturally and helpfully. Use tools when relevant. Show visitors how
-persistent memory works by actively remembering and recalling things.\
+Respond naturally and helpfully. Use tools when relevant -- remember observations,
+check your inbox, send messages to collaborators. Keep responses concise.\
 """
 
 
@@ -330,33 +333,67 @@ def execute_tools(tool_calls: list[tuple[str, list[str]]], cfg: dict) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Main chat function (GPU-decorated)
+# Model loading — module-level for ZeroGPU caching
 # ---------------------------------------------------------------------------
 
 def _is_on_hf_spaces() -> bool:
     """Detect if running on Hugging Face Spaces."""
-    return "SPACE_ID" in __import__("os").environ
+    return "SPACE_ID" in os.environ
 
 
-def chat_with_agent(message: str, history: list, cfg: dict) -> str:
-    """Generate a response using SmolLM2 with AgentAZAll tools.
+# Lazy model holders — loaded on first use, then cached
+_models = {}
 
-    On HF Spaces this runs on ZeroGPU. Locally it runs on CPU (slow but works).
-    """
+
+def _ensure_models():
+    """Load both models if not already cached."""
+    if "alpha" in _models:
+        return
+
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dtype = torch.bfloat16 if device == "cuda" else torch.float32
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = AutoModelForCausalLM.from_pretrained(
-        MODEL_ID,
-        torch_dtype=dtype,
+    # Alpha: Qwen2.5-3B-Instruct
+    _models["alpha_tokenizer"] = AutoTokenizer.from_pretrained(ALPHA_MODEL_ID)
+    alpha_model = AutoModelForCausalLM.from_pretrained(
+        ALPHA_MODEL_ID, torch_dtype=dtype,
         device_map="auto" if device == "cuda" else None,
     )
     if device != "cuda":
-        model = model.to(device)
+        alpha_model = alpha_model.to(device)
+    _models["alpha"] = alpha_model
+
+    # Beta: SmolLM2-1.7B-Instruct
+    _models["beta_tokenizer"] = AutoTokenizer.from_pretrained(BETA_MODEL_ID)
+    beta_model = AutoModelForCausalLM.from_pretrained(
+        BETA_MODEL_ID, torch_dtype=dtype,
+        device_map="auto" if device == "cuda" else None,
+    )
+    if device != "cuda":
+        beta_model = beta_model.to(device)
+    _models["beta"] = beta_model
+
+
+# ---------------------------------------------------------------------------
+# Unified generate function
+# ---------------------------------------------------------------------------
+
+def generate_response(agent_id: str, message: str, history: list, cfg: dict) -> str:
+    """Generate a response using the appropriate model with AgentAZAll tools.
+
+    agent_id: "alpha" or "beta"
+    On HF Spaces this runs on ZeroGPU. Locally it runs on CPU.
+    """
+    import torch
+
+    _ensure_models()
+
+    model = _models[agent_id]
+    tokenizer = _models[f"{agent_id}_tokenizer"]
+    device = next(model.parameters()).device
 
     # Build messages with context
     system_prompt = build_system_prompt(cfg)
@@ -381,7 +418,7 @@ def chat_with_agent(message: str, history: list, cfg: dict) -> str:
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
-            max_new_tokens=512,
+            max_new_tokens=384,
             temperature=0.7,
             top_p=0.9,
             do_sample=True,
@@ -396,7 +433,6 @@ def chat_with_agent(message: str, history: list, cfg: dict) -> str:
     tool_calls = parse_tool_calls(response)
     if tool_calls:
         tool_results = execute_tools(tool_calls, cfg)
-        # Clean tool call syntax from response for readability
         clean_response = TOOL_PATTERN.sub("", response).strip()
         if clean_response:
             return f"{clean_response}\n\n---\n*Tool results:*\n{tool_results}"
@@ -409,6 +445,6 @@ def chat_with_agent(message: str, history: list, cfg: dict) -> str:
 if _is_on_hf_spaces():
     try:
         import spaces
-        chat_with_agent = spaces.GPU(duration=120)(chat_with_agent)
+        generate_response = spaces.GPU(duration=120)(generate_response)
     except ImportError:
         pass
