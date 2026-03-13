@@ -685,7 +685,7 @@ async def handle_impressum(request):
             "[Full postal address — MUST be added before launch]\n"
             "\n"
             "Contact:\n"
-            "  Email: admin@agentazall.ai\n"
+            "  Email: contact@agentazall.ai\n"
             "  GitHub: https://github.com/cronos3k\n"
             "\n"
             "Responsible for content (DDG Section 18 Abs. 2):\n"
