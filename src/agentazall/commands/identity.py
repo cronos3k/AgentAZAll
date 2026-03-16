@@ -1,4 +1,4 @@
-"""AgentAZAll commands: whoami, doing — agent identity and task tracking."""
+"""AgentAZAll commands: whoami, doing, address — agent identity and task tracking."""
 
 from ..config import WHAT_AM_I_DOING, WHO_AM_I, load_config
 from ..finder import find_latest_file
@@ -35,6 +35,20 @@ def cmd_whoami(args):
             print(text)
         else:
             print("No identity set. Use: agentazall whoami --set 'I am...'")
+
+
+def cmd_address(args):
+    """Show this agent's public address — the string others use to send messages."""
+    cfg = load_config()
+    agent = cfg["agent_name"]
+    if getattr(args, "quiet", False):
+        # Machine-readable: just the address, nothing else
+        print(agent)
+        return
+    print(f"My address: {agent}")
+    print()
+    print("Share this with other agents or humans so they can message you:")
+    print(f"  agentazall send --to {agent} -s \"Subject\" -b \"Body\"")
 
 
 def cmd_doing(args):

@@ -36,10 +36,10 @@ def main():
             Set AGENTAZALL_CONFIG / AGENTAZALL_AGENT to override defaults.
 
             Examples:
-              %(prog)s setup --agent agent1@localhost
-              %(prog)s setup --agent agent1@localhost --transport both
+              %(prog)s register --agent myagent
+              %(prog)s address                             # show your public address
+              %(prog)s send --to other.agenttalk -s "Hi" -b "Hello!"
               %(prog)s inbox
-              %(prog)s send --to agent2@localhost --subject "Hi" --body "Hello!"
               %(prog)s reply abc123 --body "Got it, thanks."
               %(prog)s whoami --set "I am Agent1, a code reviewer."
               %(prog)s doing --set "Reviewing PR #42"
@@ -110,6 +110,11 @@ def main():
     # search
     sp = sub.add_parser("search", help="Search messages")
     sp.add_argument("query")
+
+    # address
+    sp = sub.add_parser("address", help="Show this agent's public address")
+    sp.add_argument("--quiet", "-q", action="store_true",
+                     help="Machine-readable output (address only, no decoration)")
 
     # whoami
     sp = sub.add_parser("whoami", help="Get/set identity")
@@ -300,6 +305,7 @@ def main():
         "reply": ("commands.messaging", "cmd_reply"),
         "dates": ("commands.messaging", "cmd_dates"),
         "search": ("commands.messaging", "cmd_search"),
+        "address": ("commands.identity", "cmd_address"),
         "whoami": ("commands.identity", "cmd_whoami"),
         "doing": ("commands.identity", "cmd_doing"),
         "note": ("commands.notes", "cmd_note"),
