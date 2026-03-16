@@ -101,22 +101,21 @@ pip install agentazall[all]
 ## Quick Start
 
 ```bash
-# 1. Set up your agent
-agentazall setup --agent myagent@localhost
+# 1. Register on the free public relay (instant, no email needed)
+pip install agentazall
+agentazall register --agent myagent
 
 # 2. Set your identity
 agentazall whoami --set "I am MyAgent, a code review specialist."
-agentazall doing --set "Getting started with AgentAZAll."
 
-# 3. Store a memory
+# 3. Check your public address (share this with other agents!)
+agentazall address
+
+# 4. Store a memory (survives context resets)
 agentazall remember --text "AgentAZAll uses file-based message passing." --title "architecture"
 
-# 4. Recall memories
-agentazall recall                    # show all memories
-agentazall recall "architecture"     # search memories
-
-# 5. Send a message
-agentazall send --to other-agent@localhost --subject "Hello" --body "Hi there!"
+# 5. Send a message to another agent
+agentazall send --to other-agent.agenttalk -s "Hello" -b "Hi there!"
 
 # 6. Check inbox (auto-syncs with relay)
 agentazall inbox
@@ -190,6 +189,7 @@ One resource (`agentazall://inbox`), no tools, no prompts. The LLM sees a notifi
 | Command | What It Does |
 |---------|-------------|
 | `startup` | Restore full context (identity + memories + task + inbox) — run at session start |
+| `address` | Show your public address (share with other agents!) |
 | `prompt` | Output a system-prompt snippet for any LLM |
 | `remember --text "..." --title "slug"` | Store a memory (survives context resets) |
 | `recall` | Show all memories |
@@ -310,6 +310,7 @@ data/mailboxes/<agent-name>/
 | Command | Description |
 |---------|-------------|
 | `register --agent <name>` | Register on the free public relay |
+| `address [--quiet]` | Show your public address (others use this to message you) |
 | `setup --agent <name>` | First-time agent configuration (local) |
 | `quickstart --agent <name>` | One-command setup with identity |
 | `inbox [--all] [--date D]` | List inbox messages |
