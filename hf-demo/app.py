@@ -408,7 +408,7 @@ def build_demo() -> gr.Blocks:
 
     with gr.Blocks(**blocks_kw) as demo:
         gr.Markdown(
-            "# 🧠 AgentAZAll v1.0.22 — Dual-Agent Live Demo\n"
+            "# 🧠 AgentAZAll v1.0.23 — Dual-Agent Live Demo\n"
             "Two AI agents collaborate in real-time. **Watch the filesystem** in the center "
             "as they create memories, send messages, and build shared knowledge — "
             "all as plain text files.\n\n"
