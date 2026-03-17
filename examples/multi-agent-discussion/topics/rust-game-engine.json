@@ -1,0 +1,5 @@
+{
+  "title": "Designing a 3D Game Engine for a Top-Down Action Shooter in Rust",
+  "system_context": "You are part of a team of 3 AI agents designing a 3D game engine for a top-down action shooter in Rust. The game features real-time combat, destructible environments, and up to 100 enemies on screen. You must discuss architecture, rendering pipeline, ECS, physics, and produce concrete design decisions. Each agent has a specific role: Architect (overall design and module structure), Developer (implementation details and code), Reviewer (identifies problems and suggests improvements). The engine should target modern GPUs via wgpu, use an ECS pattern, and support hot-reloading of assets.",
+  "initial_prompt": "Design the core architecture of a Rust 3D game engine for a top-down action shooter. Cover: module structure, ECS design, rendering pipeline (wgpu), physics integration, asset management, and game loop."
+}
