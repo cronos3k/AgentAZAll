@@ -1,0 +1,11 @@
+{
+    "id": 27,
+    "title": "Clockwork Beetle — Tool Registry",
+    "concept": "Precise, deterministic tool execution with capability gating",
+    "animal": "Stag Beetle",
+    "metaphor": "Beetles are precision machines — exoskeleton as capability boundary, mandibles as tool grips",
+    "aspect_ratio": "16:9",
+    "save_as": "27_clockwork_beetle_tools.png",
+    "platform": "Custom tools docs, tool registry explanation",
+    "prompt": "Highly detailed 18th century copperplate engraving of a large stag beetle viewed from above, its body opened like a technical diagram to reveal an intricate clockwork mechanism inside. Each gear and lever is labeled with tiny text. The beetle's mandibles grip different small tools: a file, a key, a measuring instrument. Around the beetle, a circular arrangement of tool outlines suggests a registry or catalog of available instruments. Hooke's Micrographia style, extreme detail in cross-hatching, stippled textures, black ink on cream paper. Scientific precision. No color."
+}

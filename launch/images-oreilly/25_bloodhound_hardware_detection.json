@@ -1,0 +1,11 @@
+{
+    "id": 25,
+    "title": "Bloodhound — Hardware Auto-Detection",
+    "concept": "AgentAZClaw auto-backend: sniffs out GPU, RAM, downloads right model",
+    "animal": "Bloodhound",
+    "metaphor": "Bloodhounds detect invisible trails — like detecting GPU capability and finding the right model",
+    "aspect_ratio": "16:9",
+    "save_as": "25_bloodhound_hardware_detection.png",
+    "platform": "AgentAZClaw setup docs, backend.py section",
+    "prompt": "Highly detailed 18th century copperplate engraving of a bloodhound with its nose pressed to the ground, following an invisible scent trail. The trail splits into multiple paths marked with small emblems: a GPU chip, a memory module, a processor die. The bloodhound's collar has a small compass attached. In the background, faint outlines of different model architectures appear like ghostly specimens in glass jars on shelves. Cross-hatching technique throughout, stippled shadows, black ink on cream paper, Buffon natural history folio style. No color. No modern elements."
+}

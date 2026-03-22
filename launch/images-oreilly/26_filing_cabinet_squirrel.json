@@ -1,0 +1,11 @@
+{
+    "id": 26,
+    "title": "Squirrel — Memory-First Architecture",
+    "concept": "Context window is the desk, memory is the filing cabinet",
+    "animal": "Red Squirrel",
+    "metaphor": "Squirrels cache nuts across hundreds of locations and remember where each one is — perfect recall/remember metaphor",
+    "aspect_ratio": "16:9",
+    "save_as": "26_squirrel_memory_first.png",
+    "platform": "Architecture docs, memory-first explanation",
+    "prompt": "Highly detailed 18th century copperplate engraving of a red squirrel sitting on a small desk or writing table, surrounded by a vast network of cached acorns stored in labeled hollows of an enormous tree trunk behind it. The squirrel holds a single acorn on the desk (current context) while the tree trunk shows hundreds of neatly organized acorn caches in labeled compartments (persistent memory). Delicate lines connect some caches to the squirrel's paws, showing active recall paths. Cross-hatching and parallel line shading, black ink on cream paper, Audubon-quality natural history illustration. No color."
+}

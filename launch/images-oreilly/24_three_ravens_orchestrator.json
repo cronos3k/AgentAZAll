@@ -1,0 +1,11 @@
+{
+    "id": 24,
+    "title": "Three Ravens — AgentAZClaw Orchestrator",
+    "concept": "Memory-first multi-agent orchestration",
+    "animal": "Three Ravens on Oak",
+    "metaphor": "Ravens use tools, share food caches (memories), and coordinate hunts — the perfect multi-agent metaphor",
+    "aspect_ratio": "16:9",
+    "save_as": "24_three_ravens_orchestrator.png",
+    "platform": "AgentAZClaw hero, autonomous.html header",
+    "prompt": "Highly detailed 18th century copperplate engraving of three ravens perched on the branches of a massive ancient oak tree. The ravens face each other in a triangular arrangement, each holding a different tool: the left raven holds a drafting compass (architect), the center raven holds a quill pen dripping ink (developer), the right raven examines a scroll with a magnifying glass (reviewer). Between the ravens, delicate lines suggest a network of shared knowledge. The oak tree's roots form an intricate network pattern suggesting persistent memory storage. Small text labels float near each raven. Cross-hatching and stippling technique, black ink on cream paper, natural history folio style, Bewick woodcut influence. No color. No modern elements. Scientific illustration precision."
+}
