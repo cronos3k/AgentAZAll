@@ -1,0 +1,82 @@
+{
+  "title": "AWS CardDemo COBOL-to-Python Migration",
+  "description": "Real-world migration of the AWS CardDemo credit card management system (50,000 lines COBOL, 44 programs, 62 copybooks, 21 BMS maps, 55 JCL jobs) to modern Python/FastAPI with PostgreSQL.",
+  "source_repo": "https://github.com/aws-samples/aws-mainframe-modernization-carddemo",
+  "license": "Apache-2.0",
+  "cobol_root": "/home/gregor/localcode/carddemo/app",
+  "phases": [
+    {
+      "name": "Discovery & Inventory",
+      "rounds": [1, 20],
+      "description": "Analyze the CardDemo codebase. Map all programs, copybooks, VSAM files, CICS transactions. Understand data flow and dependencies.",
+      "cobol_files": ["cbl/COSGN00C.cbl", "cbl/COMEN01C.cbl", "cbl/COADM01C.cbl"],
+      "copybooks": ["cpy/CUSTREC.cpy", "cpy/COCOM01Y.cpy", "cpy/CVCRD01Y.cpy"],
+      "focus": "Build the complete dependency graph. Identify every VSAM file, every CICS transaction ID, every inter-program LINK/XCTL. This is the foundation everything else depends on."
+    },
+    {
+      "name": "Data Layer Migration",
+      "rounds": [21, 45],
+      "description": "Design the PostgreSQL schema from VSAM file definitions and COBOL copybooks. Map every record layout to SQLAlchemy models. Design the data migration scripts.",
+      "cobol_files": ["cbl/CBACT01C.cbl", "cbl/CBACT02C.cbl", "cbl/CBACT03C.cbl", "cbl/CBACT04C.cbl", "cbl/CBIMPORT.cbl", "cbl/CBEXPORT.cbl"],
+      "copybooks": ["cpy/CUSTREC.cpy", "cpy/CVACT01Y.cpy", "cpy/CVACT02Y.cpy", "cpy/CVACT03Y.cpy", "cpy/CVTRA01Y.cpy", "cpy/CVTRA02Y.cpy", "cpy/CVTRA03Y.cpy"],
+      "focus": "VSAM KSDS/ESDS/RRDS to PostgreSQL tables. COBOL PIC clauses to Python types. COMP/COMP-3 to integers/decimals. Fixed-length records to normalized relational schema."
+    },
+    {
+      "name": "Authentication & User Management",
+      "rounds": [46, 60],
+      "description": "Migrate the signon system (COSGN00C) and user management programs (COUSR00C-03C) to FastAPI with JWT authentication.",
+      "cobol_files": ["cbl/COSGN00C.cbl", "cbl/COUSR00C.cbl", "cbl/COUSR01C.cbl", "cbl/COUSR02C.cbl", "cbl/COUSR03C.cbl"],
+      "copybooks": ["cpy/CSUSR01Y.cpy", "cpy/CSSETATY.cpy"],
+      "focus": "CICS USRSEC VSAM file to proper password hashing (bcrypt). BMS signon maps to REST API endpoints. Session management via JWT instead of CICS pseudo-conversational pattern."
+    },
+    {
+      "name": "Account Operations",
+      "rounds": [61, 85],
+      "description": "Migrate account view/update/list programs. This is the largest module — COACTUPC alone is 4,236 lines of business logic.",
+      "cobol_files": ["cbl/COACTUPC.cbl", "cbl/COACTVWC.cbl", "cbl/CBCUS01C.cbl"],
+      "copybooks": ["cpy/CVACT01Y.cpy", "cpy/CVACT02Y.cpy", "cpy/CVCUS01Y.cpy"],
+      "focus": "Decompose the 4,236-line COACTUPC into clean Python service classes. Extract validation rules (88-level conditions). Map CICS EXEC READ/WRITE/REWRITE to SQLAlchemy ORM calls. Preserve every business rule exactly."
+    },
+    {
+      "name": "Credit Card & Transaction Processing",
+      "rounds": [86, 115],
+      "description": "Migrate card management (list/search/update) and transaction processing (view/add/report). The financial core of the application.",
+      "cobol_files": ["cbl/COCRDLIC.cbl", "cbl/COCRDSLC.cbl", "cbl/COCRDUPC.cbl", "cbl/COTRN00C.cbl", "cbl/COTRN01C.cbl", "cbl/COTRN02C.cbl"],
+      "copybooks": ["cpy/CVCRD01Y.cpy", "cpy/CVTRA01Y.cpy", "cpy/CVTRA02Y.cpy"],
+      "focus": "Transaction integrity in Python (database transactions replacing CICS syncpoints). Decimal precision for financial amounts. Audit trail preservation. Batch statement generation (CBSTM03A/B) to scheduled Python tasks."
+    },
+    {
+      "name": "Batch Processing & Reports",
+      "rounds": [116, 135],
+      "description": "Migrate JCL batch jobs and report programs to Python scheduled tasks and async workers.",
+      "cobol_files": ["cbl/CBSTM03A.CBL", "cbl/CBSTM03B.CBL", "cbl/CBTRN01C.cbl", "cbl/CBTRN02C.cbl", "cbl/CBTRN03C.cbl", "cbl/CORPT00C.cbl"],
+      "copybooks": ["cpy/COSTM01.CPY", "cpy/CVEXPORT.cpy"],
+      "focus": "JCL step sequences to Python Celery task chains. SORT/MERGE to SQL ORDER BY. Print files to PDF generation. Sequential file processing to streaming generators."
+    },
+    {
+      "name": "Integration, Testing & Cutover",
+      "rounds": [136, 160],
+      "description": "Integration testing strategy, data migration verification, parallel run design, rollback plan, deployment architecture.",
+      "cobol_files": [],
+      "copybooks": [],
+      "focus": "End-to-end testing against the original COBOL behavior. Shadow mode (run both systems, compare outputs). Data reconciliation scripts. Blue-green deployment. Staff training. Rollback triggers."
+    }
+  ],
+  "coherence_probes": [
+    {"after_round": 25, "question": "What database engine did we decide on in the data layer phase, and what was the primary reason for that choice over alternatives?"},
+    {"after_round": 45, "question": "List the VSAM files we identified during discovery and confirm the PostgreSQL table names we mapped them to."},
+    {"after_round": 65, "question": "How does our authentication migration handle the CICS pseudo-conversational pattern we analyzed in COSGN00C? Refer to the specific approach we agreed on."},
+    {"after_round": 85, "question": "What was our decomposition strategy for COACTUPC's 4,236 lines? Name the Python service classes we defined and which business rules each owns."},
+    {"after_round": 105, "question": "How did we decide to handle decimal precision for financial transactions? Reference the specific COBOL PIC clause patterns and the Python types we mapped them to."},
+    {"after_round": 125, "question": "What is our batch processing replacement architecture? How does it relate to the VSAM-to-PostgreSQL migration we designed in Phase 2?"},
+    {"after_round": 145, "question": "Walk through our complete migration plan from Phase 1 to Phase 7. Reference specific decisions from each phase and verify they are still consistent with each other."},
+    {"after_round": 155, "question": "Final coherence check: Reference a specific technical decision from round 1-10 and explain how it influenced the architecture we finalized in the latest rounds."}
+  ],
+  "system_context": "You are participating in a structured multi-agent discussion to plan the migration of AWS CardDemo — a real open-source COBOL credit card management system — from COBOL/CICS/VSAM to Python/FastAPI/PostgreSQL. This is a 50,000-line enterprise application with 44 COBOL programs, 62 copybooks, 21 BMS screen maps, and 55 JCL batch jobs. It handles credit card account management, transaction processing, billing, user authentication, and reporting. Your discussion must produce a concrete, actionable migration plan, not abstract advice. Reference specific COBOL program names, copybook structures, and data layouts. Every decision you make in early rounds MUST be honored in later rounds — consistency is critical.",
+  "agent_roles": {
+    "architect": "You are the Migration Architect. You design the target Python/FastAPI/PostgreSQL architecture, make technology decisions, define the module decomposition, and ensure architectural consistency across all phases. You have deep knowledge of both COBOL/CICS patterns and modern Python web architectures. When you make a decision, it is binding for later phases. ALWAYS call 'agentazall remember' to store every architectural decision you make, and call 'agentazall recall' at the start of each turn to review prior decisions.",
+    "developer": "You are the Migration Developer. You write the actual Python code translations, design the SQLAlchemy models, implement the FastAPI endpoints, and handle the detailed COBOL-to-Python conversion patterns. You must follow the Architect's design decisions exactly. When you encounter ambiguity in the COBOL code, flag it. Store every conversion pattern and code mapping you establish via 'agentazall remember'. Call 'agentazall recall' at the start of each turn.",
+    "reviewer": "You are the Migration Reviewer and QA Lead. You verify that every migration decision preserves the original COBOL business logic. You check for: data precision loss (especially PIC 9/COMP-3 financial fields), missing edge cases from 88-level conditions, CICS transaction integrity violations, and architectural inconsistencies between phases. You are the guardian of correctness. If you find an inconsistency with a decision from an earlier phase, you MUST flag it immediately. Use 'agentazall recall' to verify against prior decisions."
+  },
+  "initial_prompt": "We are beginning the migration analysis of AWS CardDemo, a real open-source COBOL/CICS credit card management system from AWS (Apache 2.0 license). The codebase contains:\n\n- 31 core COBOL programs in app/cbl/ (30,175 lines)\n- 13 additional programs in optional modules (IMS/DB2/MQ)\n- 62 copybooks defining data structures\n- 21 BMS screen maps\n- 55 JCL batch jobs\n\nKey programs:\n- COSGN00C.cbl — Signon/authentication (CICS, reads USRSEC VSAM)\n- COACTUPC.cbl — Account update (4,236 lines, largest program)\n- COACTVWC.cbl — Account view\n- COCRDLIC.cbl — Credit card list\n- COCRDSLC.cbl — Credit card search\n- COCRDUPC.cbl — Credit card update (1,560 lines)\n- COTRN00C/01C/02C.cbl — Transaction processing\n- CBSTM03A/B.CBL — Statement generation (batch)\n- CBTRN01C/02C/03C.cbl — Transaction batch processing\n- CORPT00C.cbl — Reporting\n- COUSR00C-03C.cbl — User management\n- CBIMPORT/CBEXPORT.cbl — Data import/export\n\nTarget stack: Python 3.12, FastAPI, SQLAlchemy 2.0, PostgreSQL 16, Celery for batch, pytest for testing.\n\nLet's begin Phase 1: Discovery & Inventory. Analyze the overall architecture and build the dependency map."
+}

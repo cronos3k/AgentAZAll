@@ -19,6 +19,52 @@ AgentAZAll starts from the opposite assumption: **a message is a text file, a ma
 
 This was validated empirically: **1,744 cryptographically signed messages** exchanged by **4 autonomous LLM instances** (3 model architectures) across **3 transport protocols** in 30 minutes, with zero protocol failures. See the [white paper](paper/) for the full analysis.
 
+## Autonomous Multi-Agent Orchestration
+
+AgentAZAll isn't just memory for single agents — it's the backbone for **autonomous multi-agent teams** that run for hours without human intervention.
+
+**[AZClaw](azclaw/)** is a memory-first orchestrator built on AgentAZAll. Three classes, ~1,000 lines, one dependency. Validated in a **9-hour autonomous run**:
+
+| Metric | Value |
+|--------|-------|
+| Rounds | 199 |
+| Runtime | 8 hours 46 minutes |
+| Python files produced | 52 (2,543 lines) |
+| Memories stored | 402 |
+| Tool calls | 1,599 |
+| Tokens processed | 24.3 million |
+| Context per agent | 2–9K tokens (flat) |
+| Errors | 0 |
+| Cloud API cost | $0.00 |
+
+Three identical NVIDIA Nemotron agents migrated [AWS CardDemo](https://github.com/aws-samples/aws-mainframe-modernization-carddemo) (50K lines of COBOL) to Python — reading source files, debating architecture, writing code, and sharing 402 persistent memories. Context never exceeded 9K. Speed never degraded.
+
+**The 20-line quickstart:**
+
+```python
+pip install azclaw
+
+from azclaw import Agent, Orchestrator
+
+architect = Agent("architect", role="Design the solution",
+                  endpoint="http://localhost:8080/v1/chat/completions")
+developer = Agent("developer", role="Write the code",
+                  endpoint="http://localhost:8080/v1/chat/completions",
+                  can_write=True)
+reviewer  = Agent("reviewer", role="Review the code",
+                  endpoint="http://localhost:8080/v1/chat/completions")
+
+orch = Orchestrator(agents=[architect, developer, reviewer])
+orch.set_task("Build a FastAPI REST API for a todo app")
+orch.run(max_rounds=30)
+```
+
+**The key insight:** the context window is not memory. Only the last round goes into context. Everything else is a `recall()` tool call away. Context stays small. Speed stays constant. Knowledge grows forever.
+
+Full architecture breakdown: [agentazall.ai/autonomous.html](https://agentazall.ai/autonomous.html) | Download results: [carddemo-agentazall-results.zip](https://agentazall.ai/experiments/carddemo-cobol-migration/carddemo-agentazall-results.zip) (743KB)
+
+---
+
 ## Three Transports, One Interface
 
 | Transport | Protocol | Self-Host | Public Relay | Best For |
